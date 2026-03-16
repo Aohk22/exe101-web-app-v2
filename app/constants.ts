@@ -1,0 +1,48 @@
+import type { Course } from '~/types';
+
+export const COURSES: Course[] = [
+  {
+    id: '1',
+    title: 'Ethical Hacking Fundamentals',
+    description: 'Learn the basics of ethical hacking, penetration testing, and network security.',
+    instructor: 'Marcus Vane',
+    thumbnail: 'https://picsum.photos/seed/hacking/800/600',
+    progress: 45,
+    category: 'Offensive Security',
+    duration: '15h 30m',
+    lessonsCount: 28,
+  },
+  {
+    id: '2',
+    title: 'Network Defense & Hardening',
+    description: 'Master the art of securing networks, firewalls, and intrusion detection systems.',
+    instructor: 'Elena Rodriguez',
+    thumbnail: 'https://picsum.photos/200/300',
+    progress: 12,
+    category: 'Defensive Security',
+    duration: '20h 45m',
+    lessonsCount: 35,
+  },
+  {
+    id: '3',
+    title: 'Digital Forensics & Incident Response',
+    description: 'Learn how to investigate cybercrimes and respond to security breaches.',
+    instructor: 'James Sterling',
+    thumbnail: 'https://picsum.photos/seed/forensics/800/600',
+    progress: 0,
+    category: 'Forensics',
+    duration: '22h 15m',
+    lessonsCount: 40,
+  },
+  {
+    id: '4',
+    title: 'Cloud Security Architecture',
+    description: 'Secure your cloud infrastructure across AWS, Azure, and Google Cloud.',
+    instructor: 'Sarah Jenkins',
+    thumbnail: 'https://picsum.photos/seed/cloud/800/600',
+    progress: 85,
+    category: 'Cloud Security',
+    duration: '12h 00m',
+    lessonsCount: 18,
+  },
+];

@@ -1,0 +1,102 @@
+import { defineRelations } from 'drizzle-orm'
+import { pgTable, primaryKey } from 'drizzle-orm/pg-core'
+
+export const users = pgTable("users", (t) => ({
+	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
+	name: t.varchar({ length: 255 }).notNull(),
+	email: t.varchar({ length: 255 }).notNull().unique(),
+	password: t.text().notNull(),
+}))
+
+export const reviews = pgTable("reviews", (t) => ({
+	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
+	userId: t.integer("user_id"),
+	courseId: t.integer("course_id"),
+	content: t.varchar({ length: 255 }).notNull(),
+	rating: t.integer().notNull(),
+}))
+
+export const courses = pgTable("courses", (t) => ({
+	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
+	title: t.text().notNull(),
+	description: t.varchar({ length: 255 }).notNull(),
+	instructor: t.varchar({ length: 255 }).notNull(),
+	thumbnail: t.text().notNull(),
+	category: t.text().notNull(),
+	length: t.text().notNull(),
+}))
+
+export const modules = pgTable("module", (t) => ({
+	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
+	title: t.varchar({ length: 255 }).notNull(),
+	courseId: t.integer("course_id").notNull(),
+}))
+
+export const lessons = pgTable("lesson", (t) => ({
+	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
+	title: t.varchar({ length: 255 }).notNull(),
+	length: t.integer().notNull(),
+
+	moduleId: t.integer("module_id").notNull(),
+}))
+
+export const usersToCourses = pgTable("users_to_courses", (t) => (
+	{
+		userId: t.integer('user_id').notNull().references(() => users.id),
+		courseId: t.integer('course_id').notNull().references(() => courses.id),
+	}),
+	(t) => [primaryKey({ columns: [t.userId, t.courseId] })]
+)
+
+export const usersToLessons = pgTable("users_to_lessons", (t) => (
+	{
+		usersId: t.integer("user_id").notNull().references(() => users.id),
+		lessonId: t.integer('lesson_id').notNull().references(() => lessons.id),
+		completed: t.boolean().default(false),
+	}),
+	(t) => [primaryKey({ columns: [t.usersId, t.lessonId] })],
+)
+
+export const relations = defineRelations({ users, courses, modules, lessons, reviews, usersToCourses },
+	(r) => ({
+		users: {
+			courses: r.many.courses({
+				from: r.users.id.through(r.usersToCourses.userId),
+				to: r.courses.id.through(r.usersToCourses.courseId),
+			}),
+			reviews: r.many.reviews(),
+		},
+
+		courses: {
+			users: r.many.users(),
+			modules: r.many.modules(),
+			reviews: r.many.reviews(),
+		},
+
+		modules: {
+			course: r.one.courses({
+				from: r.modules.courseId,
+				to: r.courses.id,
+			}),
+			lessons: r.many.lessons()
+		},
+
+		lessons: {
+			modules: r.one.modules({
+				from: r.lessons.moduleId,
+				to: r.modules.id,
+			})
+		},
+
+		reviews: {
+			users: r.one.users({
+				from: r.reviews.userId,
+				to: r.users.id,
+			}),
+			courses: r.one.courses({
+				from: r.reviews.courseId,
+				to: r.courses.id,
+			}),
+		}
+	})
+)
