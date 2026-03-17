@@ -1,26 +1,31 @@
 import React, { useState } from 'react';
-import { GraduationCap, Mail, Lock, ArrowRight, Loader2, Github, Chrome } from 'lucide-react';
+import { GraduationCap, Mail, Lock, ArrowRight, Loader2, Github, Chrome, XCircle } from 'lucide-react';
 import { motion } from 'motion/react';
-import { data, Form, Link, redirect } from 'react-router';
-import { getSession, commitSession  } from '~/.server/auth/sessions';
+import { data, Form, Link, redirect, useLoaderData, useNavigation } from 'react-router';
+import { getSession, commitSession } from '~/.server/auth/sessions';
 import { validateCredentials } from '~/.server/auth/login'
 import type { Route } from './+types/Login';
 
-export async function loader({request}: Route.LoaderArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
+  console.log('Login loader activating.')
   const session = await getSession(request.headers.get('Cookie'))
   if (session.has('userId')) {
+    console.log('Redirecting to / from Login loader')
     return redirect('/')
   }
 
   return data(
     { error: session.get('error') },
-    { headers: {
-      'Set-Cookie': await commitSession(session),
-    }}
+    {
+      headers: {
+        'Set-Cookie': await commitSession(session),
+      }
+    }
   )
 }
 
-export async function action({request}: Route.ActionArgs) {
+export async function action({ request }: Route.ActionArgs) {
+  console.log('Login action activating.')
   const session = await getSession(request.headers.get('Cookie'))
   const form = await request.formData()
   const username = form.get('email')
@@ -49,11 +54,13 @@ export async function action({request}: Route.ActionArgs) {
 }
 
 export default function Login() {
-  const [isLoading, setIsLoading] = useState(false);
+  const {error} = useLoaderData()
+  const navigation = useNavigation()
+  const isLoading = navigation.state === 'submitting'
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-slate-200">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
@@ -75,13 +82,13 @@ export default function Login() {
             <p className="text-slate-400 text-sm mt-1">Please enter your details to sign in.</p>
           </div>
 
-          <Form method="POST" onSubmit={() => setIsLoading(true)} className="space-y-6">
+          <Form method="POST" className="space-y-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-300 ml-1">Email Address</label>
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   name="email"
                   required
                   placeholder="name@company.com"
@@ -99,8 +106,8 @@ export default function Login() {
               </div>
               <div className="relative group">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   name="password"
                   required
                   placeholder="••••••••"
@@ -114,17 +121,20 @@ export default function Login() {
               <label htmlFor="remember" className="text-sm text-slate-400 font-medium cursor-pointer">Remember for 30 days</label>
             </div>
 
-            <button 
+            <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className={`w-full py-4 text-white rounded-2xl font-bold transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ${error
+                  ? 'bg-red-600 hover:bg-red-700 shadow-red-900/20'
+                  : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/20'
+                }`}
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
+              ) : error ? (
+                <>Try Again <ArrowRight className="w-5 h-5" /></>
               ) : (
-                <>
-                  Sign In <ArrowRight className="w-5 h-5" />
-                </>
+                <>Sign In <ArrowRight className="w-5 h-5" /></>
               )}
             </button>
           </Form>
