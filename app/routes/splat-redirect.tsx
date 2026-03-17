@@ -1,10 +1,9 @@
-import {redirect} from 'react-router';
+import { redirect } from 'react-router'
 
 export function loader() {
-  return redirect('/');
+	return redirect('/')
 }
 
 export default function SplatRedirect() {
-  return null;
+	return null
 }
-

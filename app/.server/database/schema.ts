@@ -1,22 +1,22 @@
 import { defineRelations } from 'drizzle-orm'
 import { pgTable, primaryKey } from 'drizzle-orm/pg-core'
 
-export const users = pgTable("users", (t) => ({
+export const users = pgTable('users', (t) => ({
 	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
 	name: t.varchar({ length: 255 }).notNull(),
 	email: t.varchar({ length: 255 }).notNull().unique(),
 	password: t.text().notNull(),
 }))
 
-export const reviews = pgTable("reviews", (t) => ({
+export const reviews = pgTable('reviews', (t) => ({
 	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
-	userId: t.integer("user_id"),
-	courseId: t.integer("course_id"),
+	userId: t.integer('user_id'),
+	courseId: t.integer('course_id'),
 	content: t.varchar({ length: 255 }).notNull(),
 	rating: t.integer().notNull(),
 }))
 
-export const courses = pgTable("courses", (t) => ({
+export const courses = pgTable('courses', (t) => ({
 	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
 	title: t.text().notNull(),
 	description: t.varchar({ length: 255 }).notNull(),
@@ -26,31 +26,39 @@ export const courses = pgTable("courses", (t) => ({
 	length: t.text().notNull(),
 }))
 
-export const modules = pgTable("modules", (t) => ({
+export const modules = pgTable('modules', (t) => ({
 	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
 	title: t.varchar({ length: 255 }).notNull(),
-	courseId: t.integer("course_id").notNull(),
+	courseId: t.integer('course_id').notNull(),
 }))
 
-export const lessons = pgTable("lessons", (t) => ({
+export const lessons = pgTable('lessons', (t) => ({
 	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
 	title: t.varchar({ length: 255 }).notNull(),
 	length: t.integer().notNull(),
 
-	moduleId: t.integer("module_id").notNull(),
+	moduleId: t.integer('module_id').notNull(),
 }))
 
-export const usersToCourses = pgTable("users_to_courses", (t) => (
-	{
-		userId: t.integer('user_id').notNull().references(() => users.id),
-		courseId: t.integer('course_id').notNull().references(() => courses.id),
+export const usersToCourses = pgTable(
+	'users_to_courses',
+	(t) => ({
+		userId: t
+			.integer('user_id')
+			.notNull()
+			.references(() => users.id),
+		courseId: t
+			.integer('course_id')
+			.notNull()
+			.references(() => courses.id),
 		progress: t.integer().notNull(),
 		completed: t.boolean().default(false),
 	}),
-	(t) => [primaryKey({ columns: [t.userId, t.courseId] })]
+	(t) => [primaryKey({ columns: [t.userId, t.courseId] })],
 )
 
-export const relations = defineRelations({ users, courses, modules, lessons, reviews, usersToCourses },
+export const relations = defineRelations(
+	{ users, courses, modules, lessons, reviews, usersToCourses },
 	(r) => ({
 		users: {
 			courses: r.many.courses({
@@ -71,14 +79,14 @@ export const relations = defineRelations({ users, courses, modules, lessons, rev
 				from: r.modules.courseId,
 				to: r.courses.id,
 			}),
-			lessons: r.many.lessons()
+			lessons: r.many.lessons(),
 		},
 
 		lessons: {
 			modules: r.one.modules({
 				from: r.lessons.moduleId,
 				to: r.modules.id,
-			})
+			}),
 		},
 
 		reviews: {
@@ -90,8 +98,8 @@ export const relations = defineRelations({ users, courses, modules, lessons, rev
 				from: r.reviews.courseId,
 				to: r.courses.id,
 			}),
-		}
-	})
+		},
+	}),
 )
 
 export type User = typeof users.$inferSelect
