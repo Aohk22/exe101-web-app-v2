@@ -1,36 +1,9 @@
 import { useParams, Link } from 'react-router';
-import { COURSES } from '~/constants';
+import { COURSES, MODULES } from '~/constants';
 import { Play, CheckCircle2, Clock, BookOpen, User, Star, Share2, Heart, ChevronRight, GraduationCap } from 'lucide-react';
 import { motion } from 'motion/react';
 
-const MOCK_MODULES = [
-  {
-    id: 'm1',
-    title: 'Introduction to Cyber Defense',
-    lessons: [
-      { id: 'l1', title: 'The Cyber Threat Landscape', duration: '5:00', completed: true, type: 'video' },
-      { id: 'l2', title: 'Setting up your Kali Linux Lab', duration: '12:30', completed: true, type: 'video' },
-      { id: 'l3', title: 'Security Principles (CIA Triad)', duration: '15:45', completed: false, type: 'video' },
-    ]
-  },
-  {
-    id: 'm2',
-    title: 'Network Security Fundamentals',
-    lessons: [
-      { id: 'l4', title: 'TCP/IP Model & Protocol Security', duration: '20:00', completed: false, type: 'video' },
-      { id: 'l5', title: 'Firewalls, IDS, and IPS', duration: '25:15', completed: false, type: 'video' },
-      { id: 'l6', title: 'Quiz: Network Security', duration: '10:00', completed: false, type: 'quiz' },
-    ]
-  },
-  {
-    id: 'm3',
-    title: 'Advanced Penetration Testing',
-    lessons: [
-      { id: 'l7', title: 'Exploitation Frameworks (Metasploit)', duration: '18:30', completed: false, type: 'video' },
-      { id: 'l8', title: 'Post-Exploitation & Privilege Escalation', duration: '30:00', completed: false, type: 'video' },
-    ]
-  }
-];
+const MOCK_MODULES = MODULES
 
 export default function CourseDetail() {
   const { courseId } = useParams();
