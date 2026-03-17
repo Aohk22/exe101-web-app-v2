@@ -1,19 +1,20 @@
-import { Outlet, Link, useLocation } from 'react-router';
-import { LayoutDashboard, BookOpen, GraduationCap, Settings, Bell, Search, User, Zap, Sparkles } from 'lucide-react';
-import { motion } from 'motion/react';
-import { useState } from 'react';
-import PricingModal from '~/components/PricingModal';
+import { Outlet, Link, useLocation, useRouteLoaderData } from 'react-router'
+import { LayoutDashboard, BookOpen, GraduationCap, Settings, Bell, Search, User, Zap, Sparkles } from 'lucide-react'
+import { motion } from 'motion/react'
+import { useState } from 'react'
+import PricingModal from '~/components/PricingModal'
 
 const navItems = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
   { label: 'My Courses', href: '/courses', icon: BookOpen },
   { label: 'Achievements', href: '/achievements', icon: GraduationCap },
   { label: 'Settings', href: '/settings', icon: Settings },
-];
+]
 
 export default function MainLayout() {
-  const location = useLocation();
-  const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const { user } = useRouteLoaderData('routes/protected')
+  const location = useLocation()
+  const [isPricingOpen, setIsPricingOpen] = useState(false)
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-200">
@@ -30,7 +31,7 @@ export default function MainLayout() {
 
         <nav className="flex-1">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.href;
+            const isActive = location.pathname === item.href
             return (
               <Link
                 key={item.href}
@@ -45,7 +46,7 @@ export default function MainLayout() {
                 <item.icon className="w-5 h-5" />
                 {item.label}
               </Link>
-            );
+            )
           })}
 
           {/* Pro Upgrade Card in Sidebar */}
@@ -97,7 +98,7 @@ export default function MainLayout() {
                 <User className="w-5 h-5 text-slate-400" />
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-xs font-bold text-white leading-none">Alex Johnson</p>
+                <p className="text-xs font-bold text-white leading-none">{user.name}</p>
                 <p className="text-[10px] text-slate-400 mt-1 leading-none">Pro Learner</p>
               </div>
             </Link>
@@ -126,5 +127,5 @@ export default function MainLayout() {
         </div>
       </main>
     </div>
-  );
+  )
 }
