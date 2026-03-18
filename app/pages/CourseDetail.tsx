@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router'
+import { useParams, Link, useLoaderData } from 'react-router'
 import { COURSES, MODULES } from '~/constants'
 import {
 	Play,
@@ -12,13 +12,36 @@ import {
 	ChevronRight,
 	GraduationCap,
 } from 'lucide-react'
-import { motion } from 'motion/react'
+import type { Route } from './+types/CourseDetail'
+import { userContext } from '~/context'
+import { getCourse, getCourseModules } from '~/.server/database/utils'
 
-const MOCK_MODULES = MODULES
+export async function loader({ context, params }: Route.LoaderArgs) {
+	const courseId = parseInt(params.courseId)
+	if (isNaN(courseId)) {
+		throw new Error('Invalid path parameter')
+	}
+
+	var mode = 'db'
+	const course = await getCourse(courseId)
+	var modules
+
+	switch (mode) {
+		case 'db':
+			modules = await getCourseModules(courseId)
+			return { course, modules }
+		case 'local':
+			modules = MODULES
+			return { course, modules }
+		default:
+			break
+	}
+}
 
 export default function CourseDetail() {
-	const { courseId } = useParams()
-	const course = COURSES.find((c) => c.id === courseId) || COURSES[0]
+	const { course, modules } = useLoaderData()
+
+	function enrollUser() {}
 
 	return (
 		<div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -97,13 +120,13 @@ export default function CourseDetail() {
 							Course Content
 						</h2>
 						<p className="text-sm text-slate-500">
-							{MOCK_MODULES.length} modules •{' '}
-							{course.lessonsCount} lessons
+							{modules.length} modules • {course.lessonsCount}{' '}
+							lessons
 						</p>
 					</div>
 
 					<div className="space-y-4">
-						{MOCK_MODULES.map((module, i) => (
+						{modules.map((module, i) => (
 							<div
 								key={module.id}
 								className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm"
@@ -125,12 +148,12 @@ export default function CourseDetail() {
 										>
 											<div className="flex items-center gap-4">
 												<div
-													className={cn(
-														'w-8 h-8 rounded-full flex items-center justify-center transition-colors',
-														lesson.completed
+													className={
+														'w-8 h-8 rounded-full flex items-center justify-center transition-colors' +
+														(lesson.completed
 															? 'bg-emerald-500/10 text-emerald-500'
-															: 'bg-slate-800 text-slate-600 group-hover:bg-emerald-500/10 group-hover:text-emerald-400',
-													)}
+															: 'bg-slate-800 text-slate-600 group-hover:bg-emerald-500/10 group-hover:text-emerald-400')
+													}
 												>
 													{lesson.completed ? (
 														<CheckCircle2 className="w-5 h-5" />
@@ -140,12 +163,12 @@ export default function CourseDetail() {
 												</div>
 												<div>
 													<p
-														className={cn(
-															'text-sm font-medium transition-colors',
-															lesson.completed
+														className={
+															'text-sm font-medium transition-colors' +
+															(lesson.completed
 																? 'text-slate-500'
-																: 'text-slate-200 group-hover:text-emerald-400',
-														)}
+																: 'text-slate-200 group-hover:text-emerald-400')
+														}
 													>
 														{lesson.title}
 													</p>
@@ -192,14 +215,17 @@ export default function CourseDetail() {
 					</div>
 
 					<div className="space-y-4">
-						<button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98]">
+						<button
+							onClick={enrollUser}
+							className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98]"
+						>
 							Start Learning
 						</button>
 
 						<div className="grid grid-cols-2 gap-2">
-							<button className="flex items-center justify-center gap-2 py-3 border border-slate-800 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors">
+							{/* <button className="flex items-center justify-center gap-2 py-3 border border-slate-800 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors">
 								<Heart className="w-4 h-4" /> Wishlist
-							</button>
+							</button> */}
 							<button className="flex items-center justify-center gap-2 py-3 border border-slate-800 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors">
 								<Share2 className="w-4 h-4" /> Share
 							</button>
@@ -237,8 +263,4 @@ export default function CourseDetail() {
 			</div>
 		</div>
 	)
-}
-
-function cn(...inputs: any[]) {
-	return inputs.filter(Boolean).join(' ')
 }

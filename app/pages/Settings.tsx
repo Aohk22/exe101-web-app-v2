@@ -12,6 +12,18 @@ import {
 	ChevronRight,
 } from 'lucide-react'
 import { motion } from 'motion/react'
+import { Form, redirect } from 'react-router'
+import { destroySession, getSession } from '~/.server/auth/sessions'
+import type { Route } from './+types/Settings'
+
+export async function action({ request }: Route.ActionArgs) {
+	const session = await getSession(request.headers.get('Cookie'))
+	return redirect('/login', {
+		headers: {
+			'Set-Cookie': await destroySession(session)
+		},
+	})
+}
 
 export default function Settings() {
 	const [activeTab, setActiveTab] = useState('profile')
@@ -40,11 +52,10 @@ export default function Settings() {
 							<button
 								key={tab.id}
 								onClick={() => setActiveTab(tab.id)}
-								className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
-									activeTab === tab.id
-										? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
-										: 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-								}`}
+								className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${activeTab === tab.id
+									? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
+									: 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+									}`}
 							>
 								<tab.icon className="w-5 h-5" />
 								{tab.label}
@@ -53,10 +64,12 @@ export default function Settings() {
 					</nav>
 
 					<div className="mt-10 pt-10 border-t border-slate-800">
-						<button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-red-400 hover:bg-red-400/10 transition-all">
-							<LogOut className="w-5 h-5" />
-							Sign Out
-						</button>
+						<Form method="POST">
+							<button type='submit' className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-red-400 hover:bg-red-400/10 transition-all">
+								<LogOut className="w-5 h-5" />
+								Sign Out
+							</button>
+						</Form>
 					</div>
 				</aside>
 
