@@ -23,7 +23,7 @@ export const courses = pgTable('courses', (t) => ({
 	instructor: t.varchar({ length: 255 }).notNull(),
 	thumbnail: t.text().notNull(),
 	category: t.text().notNull(),
-	length: t.text().notNull(),
+	length: t.integer().notNull(),
 }))
 
 export const modules = pgTable('modules', (t) => ({
@@ -51,56 +51,65 @@ export const usersToCourses = pgTable(
 			.integer('course_id')
 			.notNull()
 			.references(() => courses.id),
-		progress: t.integer().notNull(),
-		completed: t.boolean().default(false),
 	}),
 	(t) => [primaryKey({ columns: [t.userId, t.courseId] })],
 )
 
-export const relations = defineRelations(
-	{ users, courses, modules, lessons, reviews, usersToCourses },
-	(r) => ({
-		users: {
-			courses: r.many.courses({
-				from: r.users.id.through(r.usersToCourses.userId),
-				to: r.courses.id.through(r.usersToCourses.courseId),
-			}),
-			reviews: r.many.reviews(),
-		},
-
-		courses: {
-			users: r.many.users(),
-			modules: r.many.modules(),
-			reviews: r.many.reviews(),
-		},
-
-		modules: {
-			course: r.one.courses({
-				from: r.modules.courseId,
-				to: r.courses.id,
-			}),
-			lessons: r.many.lessons(),
-		},
-
-		lessons: {
-			modules: r.one.modules({
-				from: r.lessons.moduleId,
-				to: r.modules.id,
-			}),
-		},
-
-		reviews: {
-			users: r.one.users({
-				from: r.reviews.userId,
-				to: r.users.id,
-			}),
-			courses: r.one.courses({
-				from: r.reviews.courseId,
-				to: r.courses.id,
-			}),
-		},
+export const usersToLessons = pgTable(
+	'users_to_lessons',
+	(t) => ({
+		userId: t.integer('user_id').notNull().references(()=>users.id),
+		lessonId: t.integer('lesson_id').notNull().references(()=>lessons.id),
+		completed: t.boolean().notNull().default(false)
 	}),
+	(t) => [primaryKey({ columns: [t.userId, t.lessonId] })],
 )
+
+// Deprecated code.
+// export const relations = defineRelations(
+// 	{ users, courses, modules, lessons, reviews, usersToCourses },
+// 	(r) => ({
+// 		users: {
+// 			courses: r.many.courses({
+// 				from: r.users.id.through(r.usersToCourses.userId),
+// 				to: r.courses.id.through(r.usersToCourses.courseId),
+// 			}),
+// 			reviews: r.many.reviews(),
+// 		},
+
+// 		courses: {
+// 			users: r.many.users(),
+// 			modules: r.many.modules(),
+// 			reviews: r.many.reviews(),
+// 		},
+
+// 		modules: {
+// 			course: r.one.courses({
+// 				from: r.modules.courseId,
+// 				to: r.courses.id,
+// 			}),
+// 			lessons: r.many.lessons(),
+// 		},
+
+// 		lessons: {
+// 			modules: r.one.modules({
+// 				from: r.lessons.moduleId,
+// 				to: r.modules.id,
+// 			}),
+// 		},
+
+// 		reviews: {
+// 			users: r.one.users({
+// 				from: r.reviews.userId,
+// 				to: r.users.id,
+// 			}),
+// 			courses: r.one.courses({
+// 				from: r.reviews.courseId,
+// 				to: r.courses.id,
+// 			}),
+// 		},
+// 	}),
+// )
 
 export type User = typeof users.$inferSelect
 export type Course = typeof courses.$inferSelect

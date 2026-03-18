@@ -1,6 +1,5 @@
 import { db } from '~/.server/database/connection'
-import { users, courses, modules, lessons, usersToCourses } from './schema'
-import { COURSES, MODULES } from '~/constants'
+import { users, courses, modules, lessons, usersToCourses, usersToLessons } from './schema'
 
 // Helper: convert "MM:SS" string to total seconds
 function durationToSeconds(duration: string): number {
@@ -25,104 +24,138 @@ async function seed() {
 				email: 'bob@example.com',
 				password: 'hashed_password_2',
 			},
+			{
+				name: 'Carol White',
+				email: 'carol@example.com',
+				password: 'hashed_password_3',
+			},
 		])
 		.returning()
 
 	console.log(`✅ Inserted ${insertedUsers.length} users`)
 
-	// 2. Seed courses from COURSES constant
+	// 2. Seed courses
 	const insertedCourses = await db
 		.insert(courses)
-		.values(
-			COURSES.map((c) => ({
-				title: c.title,
-				description: c.description,
-				instructor: c.instructor,
-				thumbnail: c.thumbnail,
-				category: c.category,
-				length: c.duration, // duration → length
-			})),
-		)
+		.values([
+			{
+				title: 'Ethical Hacking Fundamentals',
+				description: 'Learn the core concepts of ethical hacking and penetration testing.',
+				instructor: 'John Doe',
+				thumbnail: '/thumbnails/ethical-hacking.png',
+				category: 'Security',
+				length: 36000,
+			},
+			{
+				title: 'Network Defense & Hardening',
+				description: 'Master firewall configuration and network hardening techniques.',
+				instructor: 'Jane Smith',
+				thumbnail: '/thumbnails/network-defense.png',
+				category: 'Security',
+				length: 30600,
+			},
+			{
+				title: 'Cloud Security Architecture',
+				description: 'Secure cloud infrastructure across AWS and Azure environments.',
+				instructor: 'Carlos Rivera',
+				thumbnail: '/thumbnails/cloud-security.png',
+				category: 'Cloud',
+				length: 43200,
+			},
+		])
 		.returning()
 
 	console.log(`✅ Inserted ${insertedCourses.length} courses`)
 
-	// Map constant IDs to inserted DB IDs for lookups
-	const courseById = Object.fromEntries(
-		COURSES.map((c, i) => [c.id, insertedCourses[i]]),
-	)
+	const [ethicalHacking, networkDefense, cloudSecurity] = insertedCourses
 
-	// 3. Infer courseId for each module by title keywords
-	function inferCourseId(moduleTitle: string): number {
-		if (/penetration|network security|cyber defense/i.test(moduleTitle)) {
-			return courseById['1'].id // Ethical Hacking Fundamentals
-		}
-		if (/firewall|defense|hardening/i.test(moduleTitle)) {
-			return courseById['2'].id // Network Defense & Hardening
-		}
-		if (/forensic|incident/i.test(moduleTitle)) {
-			return courseById['3'].id // Digital Forensics & Incident Response
-		}
-		if (/cloud|aws|azure/i.test(moduleTitle)) {
-			return courseById['4'].id // Cloud Security Architecture
-		}
-		return courseById['1'].id // fallback
-	}
-
-	// 4. Seed modules from MODULES constant
+	// 3. Seed modules (at least 2 per course)
 	const insertedModules = await db
 		.insert(modules)
-		.values(
-			MODULES.map((m) => ({
-				title: m.title,
-				courseId: inferCourseId(m.title),
-			})),
-		)
+		.values([
+			// Ethical Hacking modules
+			{ title: 'Introduction to Penetration Testing', courseId: ethicalHacking.id },
+			{ title: 'Network Scanning & Enumeration', courseId: ethicalHacking.id },
+			// Network Defense modules
+			{ title: 'Firewall Configuration Basics', courseId: networkDefense.id },
+			{ title: 'Intrusion Detection Systems', courseId: networkDefense.id },
+			// Cloud Security modules
+			{ title: 'AWS Security Fundamentals', courseId: cloudSecurity.id },
+			{ title: 'Azure Identity & Access Management', courseId: cloudSecurity.id },
+		])
 		.returning()
 
 	console.log(`✅ Inserted ${insertedModules.length} modules`)
 
-	// 5. Seed lessons, linked to their parent module
-	const allLessons = MODULES.flatMap((m, moduleIndex) =>
-		m.lessons.map((l) => ({
-			title: l.title,
-			length: durationToSeconds(l.duration),
-			moduleId: insertedModules[moduleIndex].id,
-		})),
-	)
+	const [
+		introPenTest,
+		networkScanning,
+		firewallConfig,
+		ids,
+		awsSecurity,
+		azureIam,
+	] = insertedModules
 
+	// 4. Seed lessons (at least 2 per module)
 	const insertedLessons = await db
 		.insert(lessons)
-		.values(allLessons)
+		.values([
+			// Intro to Penetration Testing
+			{ title: 'What is Ethical Hacking?', length: durationToSeconds('12:30'), moduleId: introPenTest.id },
+			{ title: 'Setting Up Your Lab Environment', length: durationToSeconds('18:00'), moduleId: introPenTest.id },
+			{ title: 'Legal & Ethical Considerations', length: durationToSeconds('10:15'), moduleId: introPenTest.id },
+			// Network Scanning & Enumeration
+			{ title: 'Using Nmap for Network Discovery', length: durationToSeconds('20:00'), moduleId: networkScanning.id },
+			{ title: 'Service & Version Detection', length: durationToSeconds('15:45'), moduleId: networkScanning.id },
+			// Firewall Configuration Basics
+			{ title: 'Understanding Firewall Rules', length: durationToSeconds('14:00'), moduleId: firewallConfig.id },
+			{ title: 'Configuring iptables', length: durationToSeconds('22:30'), moduleId: firewallConfig.id },
+			// Intrusion Detection Systems
+			{ title: 'Intro to Snort', length: durationToSeconds('16:00'), moduleId: ids.id },
+			{ title: 'Writing Custom IDS Rules', length: durationToSeconds('19:20'), moduleId: ids.id },
+			// AWS Security Fundamentals
+			{ title: 'IAM Roles & Policies', length: durationToSeconds('17:00'), moduleId: awsSecurity.id },
+			{ title: 'S3 Bucket Security', length: durationToSeconds('13:45'), moduleId: awsSecurity.id },
+			// Azure IAM
+			{ title: 'Azure Active Directory Basics', length: durationToSeconds('15:00'), moduleId: azureIam.id },
+			{ title: 'Conditional Access Policies', length: durationToSeconds('21:10'), moduleId: azureIam.id },
+		])
 		.returning()
 
 	console.log(`✅ Inserted ${insertedLessons.length} lessons`)
 
-	// 6. Seed users_to_courses using progress from COURSES constant
+	// 5. Enroll users in courses
 	await db.insert(usersToCourses).values([
-		// Alice is enrolled in all courses, progress from constants
-		...COURSES.map((c) => ({
-			userId: insertedUsers[0].id,
-			courseId: courseById[c.id].id,
-			progress: c.progress,
-			completed: c.progress === 100,
-		})),
-		// Bob is enrolled in a couple
-		{
-			userId: insertedUsers[1].id,
-			courseId: courseById['1'].id,
-			progress: 100,
-			completed: true,
-		},
-		{
-			userId: insertedUsers[1].id,
-			courseId: courseById['4'].id,
-			progress: 60,
-			completed: false,
-		},
+		// Alice enrolled in all courses
+		{ userId: insertedUsers[0].id, courseId: ethicalHacking.id },
+		{ userId: insertedUsers[0].id, courseId: networkDefense.id },
+		{ userId: insertedUsers[0].id, courseId: cloudSecurity.id },
+		// Bob enrolled in two courses
+		{ userId: insertedUsers[1].id, courseId: ethicalHacking.id },
+		{ userId: insertedUsers[1].id, courseId: cloudSecurity.id },
+		// Carol enrolled in one course
+		{ userId: insertedUsers[2].id, courseId: networkDefense.id },
 	])
 
 	console.log('✅ Inserted user-course enrollments')
+
+	// 6. Seed lesson completions via usersToLessons
+	const [lesson1, lesson2, lesson3, lesson4, lesson5] = insertedLessons
+
+	await db.insert(usersToLessons).values([
+		// Alice completed several lessons
+		{ userId: insertedUsers[0].id, lessonId: lesson1.id, completed: true },
+		{ userId: insertedUsers[0].id, lessonId: lesson2.id, completed: true },
+		{ userId: insertedUsers[0].id, lessonId: lesson3.id, completed: false },
+		// Bob completed a couple
+		{ userId: insertedUsers[1].id, lessonId: lesson1.id, completed: true },
+		{ userId: insertedUsers[1].id, lessonId: lesson4.id, completed: true },
+		{ userId: insertedUsers[1].id, lessonId: lesson5.id, completed: false },
+		// Carol just started
+		{ userId: insertedUsers[2].id, lessonId: lesson1.id, completed: false },
+	])
+
+	console.log('✅ Inserted lesson completion records')
 	console.log('🎉 Seeding complete!')
 }
 
