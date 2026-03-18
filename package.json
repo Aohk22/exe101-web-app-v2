@@ -7,7 +7,9 @@
 		"dev": "react-router dev",
 		"start": "react-router-serve ./build/server/index.js",
 		"typecheck": "react-router typegen && tsc",
+		"db:push": "npx drizzle-kit push",
 		"db:seed": "tsx ./app/.server/database/seed.ts",
+		"db:wipe": "tsx ./app/.server/database/wipe.ts",
 		"fmt": "pnpm exec prettier . --write"
 	},
 	"dependencies": {
