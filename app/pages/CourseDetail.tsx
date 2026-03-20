@@ -1,5 +1,5 @@
 import { useParams, Link, useLoaderData } from 'react-router'
-import { COURSES, MODULES } from '~/constants'
+import { COURSES, MODULES } from '~/.server/database/raw-sample'
 import {
 	Play,
 	CheckCircle2,
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import type { Route } from './+types/CourseDetail'
 import { userContext } from '~/context'
-import { getCourse, getCourseModules } from '~/.server/database/utils'
+import { getCourse, getModulesByCourse } from '~/.server/database/utils'
 
 export async function loader({ context, params }: Route.LoaderArgs) {
 	const courseId = parseInt(params.courseId)
@@ -28,7 +28,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
 
 	switch (mode) {
 		case 'db':
-			modules = await getCourseModules(courseId)
+			modules = await getModulesByCourse(courseId)
 			return { course, modules }
 		case 'local':
 			modules = MODULES

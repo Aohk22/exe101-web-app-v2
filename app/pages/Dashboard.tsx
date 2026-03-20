@@ -1,11 +1,9 @@
-import { COURSES } from '~/constants'
 import { BookOpen, Clock, Star, GraduationCap } from 'lucide-react'
 import { useLoaderData } from 'react-router'
 import { userContext } from '~/context'
 import type { Route } from './+types/Dashboard'
-import { CourseSchema } from '~/types'
-import { getUserCourses, getCourseLessonCount } from '~/.server/database/utils'
-import z from 'zod'
+import { CourseSchema, type Course, type CourseView } from '~/.server/database/views'
+import { getCourseByUserWithProgress } from '~/.server/database/utils'
 import ContinueLearning from '~/components/ContinueLearning'
 import RecommendedCourses from '~/components/RecommendedCourses'
 
@@ -15,35 +13,20 @@ export async function loader({ context }: Route.LoaderArgs) {
 		throw new Error('User context resolved to null.')
 	}
 
-	var mode = 'db'
-	var coursesParsed
-	switch (mode) {
-		case 'db':
-			const courses = await getUserCourses(user.id)
-			courses.map((c) => ({
-				...c,
-				lessonCount: getCourseLessonCount(c.id),
-			}))
-			coursesParsed = z.array(CourseSchema).parse(courses)
-			return { mode, user, courses: coursesParsed }
-		case 'local':
-			coursesParsed = z.array(CourseSchema).parse(COURSES)
-			return { mode, user, courses: coursesParsed }
-		default:
-			break
-	}
+	const courses = await getCourseByUserWithProgress(user.id)
+
+	return { user, courses }
 }
 
 export default function Dashboard() {
-	const { mode, user, courses } = useLoaderData()
-	const continueCourse = courses[0]
+	const { user, courses } = useLoaderData()
+	const continueCourse: CourseView = courses[0]
 	const recommendedCourses = courses.slice(1)
 
 	return (
 		<div className="space-y-10">
 			{/* Welcome Section */}
 			<section>
-				<p className="text-slate-600 mt-1">USING MODE: {mode}</p>
 				<h1 className="text-3xl font-bold text-white">
 					Welcome back, {user.name}! 👋
 				</h1>

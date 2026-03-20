@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router'
-import { COURSES } from '~/constants'
+import { COURSES } from '~/.server/database/raw-sample'
 import {
 	ChevronLeft,
 	ChevronRight,

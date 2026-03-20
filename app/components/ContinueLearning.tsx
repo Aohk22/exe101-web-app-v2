@@ -1,8 +1,9 @@
-import { Link, ArrowRight, PlayCircle } from 'lucide-react'
+import { ArrowRight, PlayCircle } from 'lucide-react'
 import { motion } from 'motion/react'
-import type { Course } from '~/types'
+import { Link } from 'react-router'
+import type { CourseView } from '~/.server/database/views'
 
-export default function ContinueLearning({ course }: { course: Course }) {
+export default function ContinueLearning({ course }: { course: CourseView }) {
 	if (!course) {
 		return (
 			<section className="bg-slate-900/50 border border-slate-800 border-dashed rounded-3xl p-12 text-center">
@@ -22,6 +23,7 @@ export default function ContinueLearning({ course }: { course: Course }) {
 			</section>
 		)
 	}
+	const percent = (course.progress/course.lessonsCount * 100).toFixed(2)
 	return (
 		<section>
 			<div className="flex items-center justify-between mb-6">
@@ -65,7 +67,7 @@ export default function ContinueLearning({ course }: { course: Course }) {
 					<div className="space-y-2">
 						<div className="flex justify-between text-sm">
 							<span className="text-slate-400 font-medium">
-								{course.progress}% complete
+								{percent}% complete
 							</span>
 							<span className="text-slate-500">
 								{`${course.progress}/${course.lessonsCount}`}{' '}
@@ -75,7 +77,7 @@ export default function ContinueLearning({ course }: { course: Course }) {
 						<div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
 							<motion.div
 								initial={{ width: 0 }}
-								animate={{ width: `${course.progress}%` }}
+								animate={{ width: `${percent}%` }}
 								transition={{ duration: 1, ease: 'easeOut' }}
 								className="h-full bg-emerald-500 rounded-full"
 							/>

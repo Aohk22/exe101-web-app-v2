@@ -1,5 +1,6 @@
-import { defineRelations } from 'drizzle-orm'
 import { pgTable, primaryKey } from 'drizzle-orm/pg-core'
+import { createSelectSchema } from 'drizzle-zod'
+// import { defineRelations } from 'drizzle-orm'
 
 export const users = pgTable('users', (t) => ({
 	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -16,14 +17,20 @@ export const reviews = pgTable('reviews', (t) => ({
 	rating: t.integer().notNull(),
 }))
 
+export const categories = pgTable('categories', (t) => ({
+	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
+	name: t.varchar({ length: 255 }).notNull().unique(),
+}))
+
 export const courses = pgTable('courses', (t) => ({
 	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
 	title: t.text().notNull(),
 	description: t.varchar({ length: 255 }).notNull(),
 	instructor: t.varchar({ length: 255 }).notNull(),
 	thumbnail: t.text().notNull(),
-	category: t.text().notNull(),
 	length: t.integer().notNull(),
+
+	categoryId: t.integer('category_id').notNull().references(() => categories.id),
 }))
 
 export const modules = pgTable('modules', (t) => ({
@@ -65,7 +72,7 @@ export const usersToLessons = pgTable(
 	(t) => [primaryKey({ columns: [t.userId, t.lessonId] })],
 )
 
-// Deprecated code.
+// Not needed.
 // export const relations = defineRelations(
 // 	{ users, courses, modules, lessons, reviews, usersToCourses },
 // 	(r) => ({
@@ -116,3 +123,10 @@ export type Course = typeof courses.$inferSelect
 export type Module = typeof modules.$inferSelect
 export type Lesson = typeof lessons.$inferSelect
 export type Review = typeof reviews.$inferSelect
+export type Category = typeof categories.$inferSelect
+
+export const userSchema = createSelectSchema(users)
+export const courseSchema = createSelectSchema(courses)
+export const moduleSchema = createSelectSchema(modules)
+export const lessonSchema = createSelectSchema(lessons)
+export const categorySchema = createSelectSchema(categories)

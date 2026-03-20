@@ -1,5 +1,5 @@
 import { Link, Clock } from 'lucide-react'
-import type { Course } from '~/types'
+import type { Course } from '~/.server/database/views'
 
 export default function RecommendedCourses({ courses }: { courses: Course[] }) {
 	if (courses.length === 0) {
