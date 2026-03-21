@@ -1,7 +1,12 @@
-import { Link, Clock } from 'lucide-react'
-import type { CourseUserProgress } from '~/pages/Dashboard'
+import { Clock } from 'lucide-react'
+import { Link } from 'react-router'
+import type { DashboardData } from '~/.server/queries/dashboard'
 
-export default function RecommendedCourses({ courses }: { courses: CourseUserProgress[] }) {
+export default function RecommendedCourses({
+	courses
+}: {
+	courses: DashboardData[]
+}) {
 	if (courses.length === 0) {
 		return null
 	}
@@ -43,7 +48,7 @@ export default function RecommendedCourses({ courses }: { courses: CourseUserPro
 									By {course.instructor}
 								</p>
 								<p className="text-xs font-bold text-slate-300">
-									{course.lessons_count} lessons
+									{course.lessonsCount} lessons
 								</p>
 							</div>
 						</div>

@@ -1,9 +1,13 @@
 import { ArrowRight, PlayCircle } from 'lucide-react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router'
-import type { CourseUserProgress } from '~/pages/Dashboard'
+import type { DashboardData } from '~/.server/queries/dashboard'
 
-export default function ContinueLearning({ course }: { course: CourseUserProgress }) {
+export default function ContinueLearning({
+	course
+}: {
+	course: DashboardData
+}) {
 	if (!course) {
 		return (
 			<section className="bg-slate-900/50 border border-slate-800 border-dashed rounded-3xl p-12 text-center">
@@ -23,7 +27,7 @@ export default function ContinueLearning({ course }: { course: CourseUserProgres
 			</section>
 		)
 	}
-	const percent = (course.progress / course.lessonsCount * 100).toFixed(2)
+	const percent = (course.lessonsCompleted / course.lessonsCount * 100).toFixed(2)
 	return (
 		<section>
 			<div className="flex items-center justify-between mb-6">
@@ -70,7 +74,7 @@ export default function ContinueLearning({ course }: { course: CourseUserProgres
 								{percent}% complete
 							</span>
 							<span className="text-slate-500">
-								{`${course.progress}/${course.lessonsCount}`}{' '}
+								{`${course.lessonsCompleted}/${course.lessonsCount}`}{' '}
 								lessons
 							</span>
 						</div>
