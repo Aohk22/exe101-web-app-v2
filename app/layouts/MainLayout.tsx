@@ -9,9 +9,11 @@ import {
 	User,
 	Zap,
 	Sparkles,
+	Sun,
+	Moon,
 } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import PricingModal from '~/components/PricingModal'
 
 const navItems = [
@@ -25,20 +27,103 @@ export default function MainLayout() {
 	const { user } = useRouteLoaderData('routes/protected')
 	const location = useLocation()
 	const [isPricingOpen, setIsPricingOpen] = useState(false)
+	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+	const [sidebarWidth, setSidebarWidth] = useState(256)
+	const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+	const resizeStateRef = useRef({
+		isResizing: false,
+		lastExpandedWidth: 256,
+	})
+
+	useEffect(() => {
+		const storedTheme = window.localStorage.getItem('theme')
+		const nextTheme =
+			storedTheme === 'light' || storedTheme === 'dark'
+				? storedTheme
+				: window.matchMedia('(prefers-color-scheme: dark)').matches
+					? 'dark'
+					: 'light'
+
+		setTheme(nextTheme)
+	}, [])
+
+	useEffect(() => {
+		function handleMouseMove(event: MouseEvent) {
+			if (!resizeStateRef.current.isResizing) {
+				return
+			}
+
+			const collapseThreshold = 170
+			const minExpandedWidth = 220
+			const maxExpandedWidth = 420
+
+			if (event.clientX < collapseThreshold) {
+				setIsSidebarCollapsed(true)
+				return
+			}
+
+			const nextWidth = Math.min(
+				Math.max(event.clientX, minExpandedWidth),
+				maxExpandedWidth,
+			)
+
+			resizeStateRef.current.lastExpandedWidth = nextWidth
+			setSidebarWidth(nextWidth)
+			setIsSidebarCollapsed(false)
+		}
+
+		function handleMouseUp() {
+			resizeStateRef.current.isResizing = false
+			document.body.style.userSelect = ''
+			document.body.style.cursor = ''
+		}
+
+		window.addEventListener('mousemove', handleMouseMove)
+		window.addEventListener('mouseup', handleMouseUp)
+
+		return () => {
+			window.removeEventListener('mousemove', handleMouseMove)
+			window.removeEventListener('mouseup', handleMouseUp)
+		}
+	}, [])
+
+	function startResize() {
+		resizeStateRef.current.isResizing = true
+		document.body.style.userSelect = 'none'
+		document.body.style.cursor = 'col-resize'
+	}
+
+	function toggleTheme() {
+		const nextTheme = theme === 'dark' ? 'light' : 'dark'
+		setTheme(nextTheme)
+		window.localStorage.setItem('theme', nextTheme)
+		document.documentElement.dataset.theme = nextTheme
+		document.documentElement.style.colorScheme = nextTheme
+	}
 
 	return (
-		<div className="flex min-h-screen bg-slate-950 text-slate-200">
+		<div className="flex min-h-screen bg-slate-950 text-slate-200 transition-colors">
 			{/* Sidebar */}
-			<aside className="w-64 border-r border-slate-800 bg-slate-900 hidden md:flex flex-col sticky top-0 h-screen">
+			<aside
+				className="border-r border-slate-800 bg-slate-900 hidden md:flex flex-col sticky top-0 h-screen relative shrink-0"
+				style={{ width: isSidebarCollapsed ? 88 : sidebarWidth }}
+			>
 				<div className="p-6">
-					<Link to="/" className="flex items-center gap-2">
-						<div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-							<GraduationCap className="text-white w-5 h-5" />
-						</div>
-						<span className="font-bold text-xl tracking-tight text-white">
-							CyberSpace Academy
-						</span>
-					</Link>
+					<div className="flex items-center justify-center">
+						<Link
+							to="/"
+							className={`flex items-center ${isSidebarCollapsed ? 'justify-center w-full' : 'gap-3 min-w-0'}`}
+						>
+							<div className="h-8 w-8 shrink-0 bg-emerald-600 rounded-lg flex items-center justify-center">
+								<GraduationCap className="text-white w-5 h-5" />
+							</div>
+							{!isSidebarCollapsed && (
+								<span className="min-w-0 text-xl font-bold tracking-tight text-white leading-tight break-words">
+									CyberSpace Academy
+								</span>
+							)}
+						</Link>
+					</div>
 				</div>
 
 				<nav className="flex-1">
@@ -49,41 +134,52 @@ export default function MainLayout() {
 								key={item.href}
 								to={item.href}
 								className={
-									'flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors relative' +
+									`flex items-center px-6 py-3 text-sm font-medium transition-colors relative ${isSidebarCollapsed ? 'justify-center' : 'gap-3'
+									} ` +
 									(isActive
 										? 'bg-emerald-500/10 text-emerald-400 border-r-2 border-emerald-500'
 										: 'text-slate-400 hover:bg-slate-800 hover:text-white')
 								}
+								title={isSidebarCollapsed ? item.label : undefined}
 							>
 								<item.icon className="w-5 h-5" />
-								{item.label}
+								{!isSidebarCollapsed && item.label}
 							</Link>
 						)
 					})}
 
 					{/* Pro Upgrade Card in Sidebar */}
-					<div className="mt-8 px-2">
-						<div className="bg-emerald-600 rounded-2xl p-4 text-white relative overflow-hidden group">
-							<div className="relative z-10">
-								<div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-3">
-									<Zap className="w-4 h-4" />
+					{!isSidebarCollapsed && (
+						<div className="mt-8 px-2">
+							<div className="bg-emerald-600 rounded-2xl p-4 text-white relative overflow-hidden group">
+								<div className="relative z-10">
+									<div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-3">
+										<Zap className="w-4 h-4" />
+									</div>
+									<p className="font-bold text-sm mb-1">Go Pro</p>
+									<p className="text-[10px] text-emerald-100 mb-3">
+										Unlock all premium courses and certificates.
+									</p>
+									<button
+										onClick={() => setIsPricingOpen(true)}
+										className="w-full py-2 bg-white text-emerald-600 rounded-xl text-[10px] font-bold hover:bg-emerald-50 transition-colors"
+									>
+										Upgrade Now
+									</button>
 								</div>
-								<p className="font-bold text-sm mb-1">Go Pro</p>
-								<p className="text-[10px] text-emerald-100 mb-3">
-									Unlock all premium courses and certificates.
-								</p>
-								<button
-									onClick={() => setIsPricingOpen(true)}
-									className="w-full py-2 bg-white text-emerald-600 rounded-xl text-[10px] font-bold hover:bg-emerald-50 transition-colors"
-								>
-									Upgrade Now
-								</button>
+								<div className="absolute -bottom-4 -right-4 w-16 h-16 bg-white/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
 							</div>
-							{/* Decorative circle */}
-							<div className="absolute -bottom-4 -right-4 w-16 h-16 bg-white/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
 						</div>
-					</div>
+					)}
 				</nav>
+
+				<div
+					role="separator"
+					aria-orientation="vertical"
+					aria-label="Resize sidebar"
+					onMouseDown={startResize}
+					className="absolute top-0 right-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-emerald-500/15"
+				/>
 			</aside>
 
 			{/* Main Content */}
@@ -99,13 +195,28 @@ export default function MainLayout() {
 						/>
 					</div>
 
-					<div className="flex items-center gap-4">
-						<button className="p-2 text-slate-400 hover:bg-slate-800 rounded-full transition-colors relative">
-							<Bell className="w-5 h-5" />
-							<span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-slate-900"></span>
-						</button>
+					<div className="ml-6 flex items-center gap-4">
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={toggleTheme}
+								className="p-2 text-slate-400 hover:bg-slate-800 rounded-full transition-colors"
+								aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+							>
+								{theme === 'dark' ? (
+									<Sun className="w-4 h-4" />
+								) : (
+									<Moon className="w-4 h-4" />
+								)}
+							</button>
 
-						<div className="h-8 w-px bg-slate-800 mx-2"></div>
+							<button className="p-2 text-slate-400 hover:bg-slate-800 rounded-full transition-colors relative">
+								<Bell className="w-5 h-5" />
+								<span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-slate-900"></span>
+							</button>
+						</div>
+
+						<div className="h-8 w-px bg-slate-800"></div>
 
 						<Link
 							to="/profile"
