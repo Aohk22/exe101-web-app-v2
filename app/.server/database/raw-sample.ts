@@ -54,13 +54,3 @@ export const USERS_TO_COURSES = [
 	{ userId: 2, courseId: 3 },
 	{ userId: 3, courseId: 2 },
 ]
-
-export const USERS_TO_LESSONS = [
-	{ userId: 1, lessonId: 1, completed: true },
-	{ userId: 1, lessonId: 2, completed: true },
-	{ userId: 1, lessonId: 3, completed: false },
-	{ userId: 2, lessonId: 1, completed: true },
-	{ userId: 2, lessonId: 4, completed: true },
-	{ userId: 2, lessonId: 5, completed: false },
-	{ userId: 3, lessonId: 1, completed: false },
-]

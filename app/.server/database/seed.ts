@@ -1,6 +1,6 @@
 import { db } from './connection'
 import { users, categories, courses, modules, lessons, usersToCourses, usersToLessons } from './schema'
-import { USERS, CATEGORIES, COURSES, MODULES, LESSONS, USERS_TO_COURSES, USERS_TO_LESSONS } from './raw-sample'
+import { USERS, CATEGORIES, COURSES, MODULES, LESSONS, USERS_TO_COURSES } from './raw-sample'
 
 async function seed() {
 	console.log('🌱 Seeding database...')
@@ -52,14 +52,6 @@ async function seed() {
 
 	console.log('✅ Inserted user-course enrollments')
 
-	await db.insert(usersToLessons)
-		.values(USERS_TO_LESSONS.map((utl) => ({
-			userId: userIdMap[utl.userId],
-			lessonId: lessonIdMap[utl.lessonId],
-			completed: utl.completed,
-		})))
-
-	console.log('✅ Inserted lesson completion records')
 	console.log('🎉 Seeding complete!')
 }
 
