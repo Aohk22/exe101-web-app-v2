@@ -26,6 +26,7 @@ async function validateCredentials(email: string, password: string) {
 	} catch (e) {
 		if (e instanceof DrizzleQueryError) {
 			console.log('ERROR: DrizzleQueryError')
+			console.log(e)
 			return null
 		}
 		throw e

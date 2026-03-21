@@ -1,57 +1,38 @@
 import { Search, Filter, Clock, BookOpen, ChevronRight } from 'lucide-react'
-import { Link, useLoaderData, useNavigate, useSearchParams } from 'react-router'
+import { Link, useLoaderData, useSearchParams } from 'react-router'
 import type { Route } from './+types/Courses'
-import { courseSchema, type Category, type Course } from '~/.server/database/schema'
-import { courseWithLessonCountSchema, getCategories, getCoursesWithLessonCount } from '~/.server/database/utils'
-import type { CourseWithLessonCount } from '~/.server/database/utils'
 import { db } from '~/.server/database/connection'
 import { sql } from 'drizzle-orm'
 import z from 'zod'
+import { courseSchema } from '~/.server/database/schema'
+import type { Category } from '~/.server/database/schema'
+import { getCategories } from '~/.server/database/utils'
+
+const coursesViewScheme = courseSchema.extend({
+	category: z.string(),
+	lessons_count: z.coerce.number(),
+})
+
+type CoursesView = z.infer<typeof coursesViewScheme>
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const url = new URL(request.url)
 	const category = url.searchParams.get('cat')
 	const categories = await getCategories()
-	const coursesViewScheme = courseSchema.extend({
-		category: z.string(),
-		lessons_count: z.coerce.number(),
-	})
-
-	if (!category) {
-		const res = await db.execute(sql`
-			SELECT 
-				c.id, c.title, c.description, c.instructor, c.thumbnail, c.length, 
-				cat.name AS category,
-				COUNT(l.id) AS lessons_count,
-			FROM courses c
-			INNER JOIN categories cat ON c.category_id = cat.id
-			INNER JOIN modules m ON c.id = m.course_id
-			INNER JOIN lessons l ON m.id = l.module_id
-			INNER JOIN users_to_lessons utl ON l.id = utl.lesson_id
-			INNER JOIN users u on utl.user_id = u.id
-			WHERE cat.name = ${category}
-			GROUP BY c.id, cat.name
-			LIMIT 10
-		`)
-
-		return { categories, courses }
-	}
-
-	const res = await db.execute(sql`
+	const query = sql`
 		SELECT 
 			c.id, c.title, c.description, c.instructor, c.thumbnail, c.length, 
 			cat.name AS category,
-			COUNT(l.id) AS lessons_count,
+			COUNT(l.id) AS lessons_count
 		FROM courses c
 		INNER JOIN categories cat ON c.category_id = cat.id
 		INNER JOIN modules m ON c.id = m.course_id
 		INNER JOIN lessons l ON m.id = l.module_id
-		INNER JOIN users_to_lessons utl ON l.id = utl.lesson_id
-		INNER JOIN users u on utl.user_id = u.id
-		WHERE cat.name = ${category}
+		${category ? sql`WHERE cat.name = ${category}` : sql``}
 		GROUP BY c.id, cat.name
-		LIMIT 10
-	`)
+		LIMIT 10`
+
+	const res = await db.execute(query)
 
 	const courses = z.array(coursesViewScheme).parse(res.rows)
 
@@ -59,7 +40,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export default function Courses() {
-	const { courses, categories }: { courses: CourseWithLessonCount[], categories: Category[] } = useLoaderData()
+	const { categories, courses }: { categories: Category[], courses: CoursesView[] } = useLoaderData()
 	const [searchParams] = useSearchParams()
 	const activeCategory = searchParams.get('cat') ?? 'all'
 
@@ -134,12 +115,12 @@ export default function Courses() {
 								<div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
 									<div className="flex items-center gap-1">
 										<Clock className="w-3 h-3" />
-										{course.duration}
+										{course.length}
 									</div>
 									<div className="w-1 h-1 bg-slate-700 rounded-full"></div>
 									<div className="flex items-center gap-1">
 										<BookOpen className="w-3 h-3" />
-										{course.lessonsCount} lessons
+										{course.lessons_count} lessons
 									</div>
 								</div>
 

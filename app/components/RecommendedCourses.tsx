@@ -1,7 +1,7 @@
 import { Link, Clock } from 'lucide-react'
-import type { Course } from '~/.server/database/views'
+import type { CourseUserProgress } from '~/pages/Dashboard'
 
-export default function RecommendedCourses({ courses }: { courses: Course[] }) {
+export default function RecommendedCourses({ courses }: { courses: CourseUserProgress[] }) {
 	if (courses.length === 0) {
 		return null
 	}
@@ -32,7 +32,7 @@ export default function RecommendedCourses({ courses }: { courses: Course[] }) {
 								</span>
 								<div className="flex items-center gap-1 text-xs text-slate-400">
 									<Clock className="w-3 h-3" />
-									{course.duration}
+									{course.length}
 								</div>
 							</div>
 							<h3 className="font-bold text-white group-hover:text-emerald-400 transition-colors">
@@ -43,7 +43,7 @@ export default function RecommendedCourses({ courses }: { courses: Course[] }) {
 									By {course.instructor}
 								</p>
 								<p className="text-xs font-bold text-slate-300">
-									{course.lessonsCount} lessons
+									{course.lessons_count} lessons
 								</p>
 							</div>
 						</div>

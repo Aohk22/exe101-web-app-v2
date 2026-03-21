@@ -2,25 +2,56 @@ import { BookOpen, Clock, Star, GraduationCap } from 'lucide-react'
 import { useLoaderData } from 'react-router'
 import { userContext } from '~/context'
 import type { Route } from './+types/Dashboard'
-import { CourseSchema, type Course, type CourseView } from '~/.server/database/views'
-import { getCourseByUserWithProgress } from '~/.server/database/utils'
 import ContinueLearning from '~/components/ContinueLearning'
 import RecommendedCourses from '~/components/RecommendedCourses'
+import { db } from '~/.server/database/connection'
+import { sql } from 'drizzle-orm'
+import { courseSchema, type User } from '~/.server/database/schema'
+import z from 'zod'
+import { NoUserContextError } from '~/error'
+
+const courseUserProgressScheme = courseSchema.extend({
+	category: z.string(),
+	lessonsCount: z.coerce.number(),
+	progress: z.coerce.number(),
+})
+
+export type CourseUserProgress = z.infer<typeof courseUserProgressScheme>
 
 export async function loader({ context }: Route.LoaderArgs) {
 	const user = context.get(userContext)
 	if (user === null) {
-		throw new Error('User context resolved to null.')
+		throw new NoUserContextError('User context resolved to null.')
 	}
+	const query = sql`
+		SELECT 
+			c.id, c.title, c.description, c.instructor, c.thumbnail, c.length, 
+			cat.name AS category,
+			COUNT(l.id) AS lessons_count,
+			COUNT(CASE WHEN utl.completed = true THEN 1 END) as progress
+		FROM courses c
+		INNER JOIN categories cat ON c.category_id = cat.id
+		INNER JOIN modules m ON c.id = m.course_id
+		INNER JOIN lessons l ON m.id = l.module_id
+		LEFT JOIN users_to_lessons utl ON l.id = utl.lesson_id
+		INNER JOIN users u on utl.user_id = u.id
+		WHERE u.id = ${user.id}
+		GROUP BY c.id, cat.name
+	`
+	const res = await db.execute(query)
+	const resMapped = res.rows.map((c) => ({
+		...c,
+		lessonsCount: c.lessons_count,
+	}))
 
-	const courses = await getCourseByUserWithProgress(user.id)
+	const courses = z.array(courseUserProgressScheme).parse(resMapped)
 
 	return { user, courses }
 }
 
 export default function Dashboard() {
-	const { user, courses } = useLoaderData()
-	const continueCourse: CourseView = courses[0]
+	const { user, courses }: { user: User, courses: CourseUserProgress[] } = useLoaderData()
+	const continueCourse = courses[0]
 	const recommendedCourses = courses.slice(1)
 
 	return (
@@ -40,7 +71,7 @@ export default function Dashboard() {
 				{[
 					{
 						label: 'Courses in Progress',
-						value: '4',
+						value: courses.length,
 						icon: BookOpen,
 						color: 'text-blue-400',
 						bg: 'bg-blue-400/10',

@@ -1,5 +1,4 @@
-import { useParams, Link, useLoaderData } from 'react-router'
-import { COURSES, MODULES } from '~/.server/database/raw-sample'
+import { Link, redirect, useLoaderData } from 'react-router'
 import {
 	Play,
 	CheckCircle2,
@@ -12,36 +11,94 @@ import {
 	ChevronRight,
 	GraduationCap,
 } from 'lucide-react'
-import type { Route } from './+types/CourseDetail'
 import { userContext } from '~/context'
-import { getCourse, getModulesByCourse } from '~/.server/database/utils'
+import type { Route } from './+types/CourseDetail'
+import { NoUserContextError } from '~/error'
+import { sql } from 'drizzle-orm'
+import { db } from '~/.server/database/connection'
+import { courseSchema, lessonSchema, moduleSchema, type Course, type Module } from '~/.server/database/schema'
+import z from 'zod'
 
 export async function loader({ context, params }: Route.LoaderArgs) {
+	const user = context.get(userContext)
+	if (user === null) {
+		throw new NoUserContextError('User resoved')
+	}
 	const courseId = parseInt(params.courseId)
 	if (isNaN(courseId)) {
 		throw new Error('Invalid path parameter')
 	}
 
-	var mode = 'db'
-	const course = await getCourse(courseId)
-	var modules
+	const query = sql`
+		SELECT 
+			c.id "courseId", 
+			c.title "courseTitle", 
+			c.description "courseDescription", 
+			c.instructor "courseInstructor", 
+			c.thumbnail "courseThumbnail", 
+			c.length "courseLength", 
 
-	switch (mode) {
-		case 'db':
-			modules = await getModulesByCourse(courseId)
-			return { course, modules }
-		case 'local':
-			modules = MODULES
-			return { course, modules }
-		default:
-			break
+			m.id "moduleId",
+			m.title "moduleTitle",
+
+			l.id "lessonId",
+			l.title "lessonTitile",
+			l.length "lessonLength"
+
+		FROM courses c
+		INNER JOIN modules m ON c.id = m.course_id
+		INNER JOIN lessons l on m.id = l.module_id
+		WHERE c.id = ${courseId}
+	`
+
+	const res = await db.execute(query)
+
+	if (res.rows.length === 0) {
+		return null
 	}
+
+	const rows = res.rows
+
+	const course = {
+		courseId: rows[0].courseId,
+		courseTitle: rows[0].courseTitle,
+		courseDescription: rows[0].courseDescription,
+		courseInstructor: rows[0].courseInstructor,
+		courseThumbnail: rows[0].courseThumbnail,
+		courseLength: rows[0].courseLength,
+	}
+
+	const modules = rows.map((c) => ({
+		id: c.moduleId,
+		title: c.moduleTitle,
+		courseId: c.courseId,
+	}))
+
+	const lessons = rows.map((c) => ({
+		id: c.lessonId,
+		title: c.lessonTitle,
+		length: c.lessonLength,
+	}))
+
+	z.parse(courseSchema, course)
+	z.array(moduleSchema).parse(modules)
+	z.array(lessonSchema).parse(lessons)
+
+	return { course, modules, lessons }
 }
 
 export default function CourseDetail() {
-	const { course, modules } = useLoaderData()
+	const { course, modules, lessonsCount }: {
+		course: Course,
+		modules: Module[],
+		lessons: Lesson[],
+	} = useLoaderData()
 
-	function enrollUser() {}
+	function enrollUser() { }
+
+	if (!course) {
+		throw redirect('/courses')
+	}
 
 	return (
 		<div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -120,7 +177,7 @@ export default function CourseDetail() {
 							Course Content
 						</h2>
 						<p className="text-sm text-slate-500">
-							{modules.length} modules • {course.lessonsCount}{' '}
+							{course} modules • {lessonsCount}{' '}
 							lessons
 						</p>
 					</div>
