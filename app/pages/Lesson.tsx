@@ -15,7 +15,8 @@ import { useState } from 'react'
 
 export default function Lesson() {
 	const { courseId, lessonId } = useParams()
-	const course = COURSES.find((c) => c.id === courseId) || COURSES[0]
+	const parsedCourseId = Number(courseId)
+	const course = COURSES.find((c) => c.id === parsedCourseId) || COURSES[0]
 	const [activeTab, setActiveTab] = useState('overview')
 
 	return (

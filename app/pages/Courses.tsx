@@ -7,6 +7,7 @@ import z from 'zod'
 import { courseSchema } from '~/.server/database/schema'
 import type { Category } from '~/.server/database/schema'
 import { getCategories } from '~/.server/database/utils'
+import { formatCourseLength } from '~/utils/format-course-length'
 
 const coursesViewScheme = courseSchema.extend({
 	category: z.string(),
@@ -73,6 +74,16 @@ export default function Courses() {
 
 			{/* Categories */}
 			<div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+				<Link
+					to="/courses"
+					className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+						activeCategory === 'all'
+							? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
+							: 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-200'
+					}`}
+				>
+					All Courses
+				</Link>
 				{categories.map((cat) => (
 					<Link
 						key={cat.id}
@@ -113,10 +124,10 @@ export default function Courses() {
 
 							<div className="p-6 flex-1 flex flex-col">
 								<div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
-									<div className="flex items-center gap-1">
-										<Clock className="w-3 h-3" />
-										{course.length}
-									</div>
+								<div className="flex items-center gap-1">
+									<Clock className="w-3 h-3" />
+									{formatCourseLength(course.length)}
+								</div>
 									<div className="w-1 h-1 bg-slate-700 rounded-full"></div>
 									<div className="flex items-center gap-1">
 										<BookOpen className="w-3 h-3" />

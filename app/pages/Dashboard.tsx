@@ -4,62 +4,35 @@ import { userContext } from '~/context'
 import type { Route } from './+types/Dashboard'
 import ContinueLearning from '~/components/ContinueLearning'
 import RecommendedCourses from '~/components/RecommendedCourses'
-import { db } from '~/.server/database/connection'
-import { sql } from 'drizzle-orm'
-import { courseSchema, type User } from '~/.server/database/schema'
-import z from 'zod'
+import type { User } from '~/.server/database/schema'
 import { NoUserContextError } from '~/error'
-
-const courseUserProgressScheme = courseSchema.extend({
-	category: z.string(),
-	lessonsCount: z.coerce.number(),
-	progress: z.coerce.number(),
-})
-
-export type CourseUserProgress = z.infer<typeof courseUserProgressScheme>
+import { getDashboardData, type DashboardData } from '~/.server/queries/dashboard'
+import { formatCourseLength } from '~/utils/format-course-length'
 
 export async function loader({ context }: Route.LoaderArgs) {
 	const user = context.get(userContext)
 	if (user === null) {
 		throw new NoUserContextError('User context resolved to null.')
 	}
-	const query = sql`
-		SELECT 
-			c.id, c.title, c.description, c.instructor, c.thumbnail, c.length, 
-			cat.name AS category,
-			COUNT(l.id) AS lessons_count,
-			COUNT(CASE WHEN utl.completed = true THEN 1 END) as progress
-		FROM courses c
-		INNER JOIN categories cat ON c.category_id = cat.id
-		INNER JOIN modules m ON c.id = m.course_id
-		INNER JOIN lessons l ON m.id = l.module_id
-		LEFT JOIN users_to_lessons utl ON l.id = utl.lesson_id
-		INNER JOIN users u on utl.user_id = u.id
-		WHERE u.id = ${user.id}
-		GROUP BY c.id, cat.name
-	`
-	const res = await db.execute(query)
-	const resMapped = res.rows.map((c) => ({
-		...c,
-		lessonsCount: c.lessons_count,
-	}))
 
-	const courses = z.array(courseUserProgressScheme).parse(resMapped)
+	const courses = await getDashboardData(user.id)
 
 	return { user, courses }
 }
 
 export default function Dashboard() {
-	const { user, courses }: { user: User, courses: CourseUserProgress[] } = useLoaderData()
+	const { user, courses }: { user: User, courses: DashboardData[] } = useLoaderData()
 	const continueCourse = courses[0]
 	const recommendedCourses = courses.slice(1)
+	const completedCourses = courses.filter((c) => c.completed === true)
+	const learningSeconds = completedCourses.reduce((acc, course) => acc + course.length, 0)
 
 	return (
 		<div className="space-y-10">
 			{/* Welcome Section */}
 			<section>
 				<h1 className="text-3xl font-bold text-white">
-					Welcome back, {user.name}! 👋
+					Welcome back, {user.name}!
 				</h1>
 				<p className="text-slate-400 mt-1">
 					You've completed 45% of your weekly goal. Keep it up!
@@ -78,14 +51,14 @@ export default function Dashboard() {
 					},
 					{
 						label: 'Completed Courses',
-						value: '12',
+						value: completedCourses.length,
 						icon: GraduationCap,
 						color: 'text-emerald-400',
 						bg: 'bg-emerald-400/10',
 					},
 					{
 						label: 'Learning Hours',
-						value: '124h',
+						value: formatCourseLength(learningSeconds),
 						icon: Clock,
 						color: 'text-amber-400',
 						bg: 'bg-amber-400/10',
