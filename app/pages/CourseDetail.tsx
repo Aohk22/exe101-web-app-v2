@@ -1,4 +1,5 @@
-import { Link, redirect, useLoaderData } from 'react-router'
+import { Form, Link, redirect, useLoaderData, useNavigation } from 'react-router'
+import { useEffect, useState } from 'react'
 import {
 	Play,
 	CheckCircle2,
@@ -15,6 +16,9 @@ import type { Route } from './+types/CourseDetail'
 import { NoUserContextError } from '~/error'
 import { getCourseDetailData } from '~/.server/queries/course-detail'
 import type { CourseDetails } from '~/.server/queries/course-detail'
+import { db } from '~/.server/database/connection'
+import { usersToCourses } from '~/.server/database/schema'
+import { formatLessonLength } from '~/utils/format-course-length'
 
 export async function loader({ context, params }: Route.LoaderArgs) {
 	const user = context.get(userContext)
@@ -34,18 +38,73 @@ export async function loader({ context, params }: Route.LoaderArgs) {
 	return data
 }
 
+export async function action({ context, params, request }: Route.ActionArgs) {
+	const user = context.get(userContext)
+	if (user === null) {
+		throw new NoUserContextError('User resolved')
+	}
+
+	const courseId = parseInt(params.courseId)
+	if (isNaN(courseId)) {
+		throw new Error('Invalid path parameter')
+	}
+
+	await db
+		.insert(usersToCourses)
+		.values({
+			userId: user.id,
+			courseId,
+		})
+		.onConflictDoNothing()
+
+	return redirect(new URL(request.url).pathname)
+}
+
 export default function CourseDetail() {
-	const {enrolled: isEnrolled, course}: {
+	const {enrolled, course}: {
 		enrolled: boolean,
 		course: CourseDetails
 	} = useLoaderData()
+	const navigation = useNavigation()
+	const [shareState, setShareState] = useState<'idle' | 'copied' | 'error'>('idle')
 	const modules = course.modules
 	const lessonsCount = modules.reduce(
 		(acc, module) => acc + module.lessons.length,
 		0,
 	)
+	const allLessons = modules.flatMap((module) => module.lessons)
+	const isSubmittingEnrollment =
+		navigation.state === 'submitting' &&
+		navigation.formAction?.endsWith(`/courses/${course.id}`)
+	const lastCompletedLesson = [...allLessons]
+		.reverse()
+		.find((lesson) => lesson.completed)
+	const fallbackLesson = allLessons[0]
+	const continueLesson = lastCompletedLesson ?? fallbackLesson
+	const continuePath = continueLesson
+		? `/courses/${course.id}/lessons/${continueLesson.id}`
+		: `/courses/${course.id}`
 
-	function enrollUser() {  }
+	useEffect(() => {
+		if (shareState === 'idle') {
+			return
+		}
+
+		const timeoutId = window.setTimeout(() => {
+			setShareState('idle')
+		}, 2000)
+
+		return () => window.clearTimeout(timeoutId)
+	}, [shareState])
+
+	async function copyCourseAddress() {
+		try {
+			await navigator.clipboard.writeText(window.location.href)
+			setShareState('copied')
+		} catch {
+			setShareState('error')
+		}
+	}
 
 	return (
 		<div className="space-y-8">
@@ -116,7 +175,7 @@ export default function CourseDetail() {
 					</div>
 				</div>
 
-				<div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl shadow-black/20 space-y-6">
+				<div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl shadow-black/20 space-y-6">
 					<div className="aspect-video rounded-2xl overflow-hidden relative group">
 						<img
 							src={course?.thumbnail ?? 'https://picsum.photos/seed/course/1280/720'}
@@ -132,32 +191,46 @@ export default function CourseDetail() {
 					</div>
 
 					<div className="space-y-4">
-						{isEnrolled ? (
-							<button
-								onClick={enrollUser}
-								className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98]"
-							>
-								Continue
-							</button>
+							{enrolled ? (
+								<Link
+									to={continuePath}
+									className="flex w-full items-center justify-center py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98]"
+								>
+									Continue
+								</Link>
 						) : (
-							<button
-								type="button"
-								className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98]"
-							>
-								Enroll Now
-							</button>
+							<Form method="post">
+								<button
+									type="submit"
+									disabled={isSubmittingEnrollment}
+									className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+								>
+									{isSubmittingEnrollment
+										? 'Enrolling...'
+										: 'Enroll Now'}
+								</button>
+							</Form>
 						)}
 
 						<div className="grid grid-cols-1 gap-2">
-							<button className="w-full py-4 flex items-center justify-center gap-2 border border-slate-800 rounded-2xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors">
-								<Share2 className="w-4 h-4" /> Share
+							<button
+								type="button"
+								onClick={copyCourseAddress}
+								className="w-full py-4 flex items-center justify-center gap-2 border border-slate-800 rounded-2xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+							>
+								<Share2 className="w-4 h-4" />
+								{shareState === 'copied'
+									? 'Copied'
+									: shareState === 'error'
+										? 'Copy Failed'
+										: 'Share'}
 							</button>
 						</div>
 					</div>
 				</div>
 
 				{/* Curriculum */}
-				{isEnrolled ? (
+				{enrolled ? (
 					<div className="space-y-6">
 						<div className="flex items-center justify-between">
 							<h2 className="text-2xl font-bold text-white">
@@ -173,7 +246,7 @@ export default function CourseDetail() {
 							{modules.map((module, i) => (
 								<div
 									key={module.id}
-									className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm"
+									className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm"
 								>
 									<div className="p-4 bg-slate-800/50 border-b border-slate-800 flex items-center justify-between">
 										<h3 className="font-bold text-white">
@@ -222,7 +295,7 @@ export default function CourseDetail() {
 															</span>
 															<span className="w-0.5 h-0.5 bg-slate-700 rounded-full"></span>
 															<span className="text-[10px] text-slate-500">
-																{lesson.length} min
+																{formatLessonLength(lesson.length)}
 															</span>
 														</div>
 													</div>
@@ -240,10 +313,7 @@ export default function CourseDetail() {
 						</div>
 					</div>
 				) : (
-					<div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-4">
-						<p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-400">
-							Enrollment Required
-						</p>
+					<div className="bg-slate-900 border border-slate-800 rounded-xl p-8 space-y-4">
 						<h2 className="text-2xl font-bold text-white">
 							Course Summary
 						</h2>
@@ -259,7 +329,7 @@ export default function CourseDetail() {
 								{modules.map((module, index) => (
 									<div
 										key={module.id}
-										className="rounded-2xl border border-slate-800 bg-slate-950/40 px-4 py-4"
+										className="rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-4"
 									>
 										<div className="flex items-start justify-between gap-4">
 											<div className="min-w-0">
@@ -286,7 +356,7 @@ export default function CourseDetail() {
 														</p>
 													</div>
 													<p className="shrink-0 text-xs text-slate-500">
-														{lesson.length} min
+														{formatLessonLength(lesson.length)}
 													</p>
 												</div>
 											))}

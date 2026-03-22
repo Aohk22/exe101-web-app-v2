@@ -10,7 +10,7 @@ export default function ContinueLearning({
 }) {
 	if (!course) {
 		return (
-			<section className="bg-slate-900/50 border border-slate-800 border-dashed rounded-3xl p-12 text-center">
+			<section className="bg-slate-900/50 border border-slate-800 border-dashed rounded-xl p-12 text-center">
 				<h2 className="text-xl font-semibold text-white mb-2">
 					No courses in progress
 				</h2>
@@ -42,7 +42,7 @@ export default function ContinueLearning({
 				</Link>
 			</div>
 
-			<div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center shadow-sm">
+			<div className="bg-slate-900 border border-slate-800 rounded-xl p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center shadow-sm">
 				<div className="w-full md:w-1/3 aspect-video rounded-2xl overflow-hidden relative group">
 					<img
 						src={course.thumbnail}
@@ -79,11 +79,9 @@ export default function ContinueLearning({
 							</span>
 						</div>
 						<div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-							<motion.div
-								initial={{ width: 0 }}
-								animate={{ width: `${percent}%` }}
-								transition={{ duration: 1, ease: 'easeOut' }}
+							<div
 								className="h-full bg-emerald-500 rounded-full"
+								style={{ width: `${percent}%` }}
 							/>
 						</div>
 					</div>

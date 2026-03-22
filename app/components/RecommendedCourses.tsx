@@ -1,6 +1,7 @@
 import { Clock } from 'lucide-react'
 import { Link } from 'react-router'
 import type { DashboardData } from '~/.server/queries/dashboard'
+import { formatCourseLength } from '~/utils/format-course-length'
 
 export default function RecommendedCourses({
 	courses
@@ -20,7 +21,7 @@ export default function RecommendedCourses({
 					<Link
 						key={course.id}
 						to={`/courses/${course.id}`}
-						className="group bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all"
+						className="group bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
 					>
 						<div className="aspect-video overflow-hidden">
 							<img
@@ -37,7 +38,7 @@ export default function RecommendedCourses({
 								</span>
 								<div className="flex items-center gap-1 text-xs text-slate-400">
 									<Clock className="w-3 h-3" />
-									{course.length}
+									{formatCourseLength(course.length)}
 								</div>
 							</div>
 							<h3 className="font-bold text-white group-hover:text-emerald-400 transition-colors">

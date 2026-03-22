@@ -1,41 +1,20 @@
-import { Search, Filter, Clock, BookOpen, ChevronRight } from 'lucide-react'
+import { Search, Clock, BookOpen, ChevronRight } from 'lucide-react'
 import { Link, useLoaderData, useSearchParams } from 'react-router'
+import { useDeferredValue, useState } from 'react'
 import type { Route } from './+types/Courses'
-import { db } from '~/.server/database/connection'
-import { sql } from 'drizzle-orm'
-import z from 'zod'
-import { courseSchema } from '~/.server/database/schema'
 import type { Category } from '~/.server/database/schema'
 import { getCategories } from '~/.server/database/utils'
+import {
+	getCoursesData,
+	type CoursesView,
+} from '~/.server/queries/courses'
 import { formatCourseLength } from '~/utils/format-course-length'
-
-const coursesViewScheme = courseSchema.extend({
-	category: z.string(),
-	lessons_count: z.coerce.number(),
-})
-
-type CoursesView = z.infer<typeof coursesViewScheme>
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const url = new URL(request.url)
 	const category = url.searchParams.get('cat')
 	const categories = await getCategories()
-	const query = sql`
-		SELECT 
-			c.id, c.title, c.description, c.instructor, c.thumbnail, c.length, 
-			cat.name AS category,
-			COUNT(l.id) AS lessons_count
-		FROM courses c
-		INNER JOIN categories cat ON c.category_id = cat.id
-		INNER JOIN modules m ON c.id = m.course_id
-		INNER JOIN lessons l ON m.id = l.module_id
-		${category ? sql`WHERE cat.name = ${category}` : sql``}
-		GROUP BY c.id, cat.name
-		LIMIT 10`
-
-	const res = await db.execute(query)
-
-	const courses = z.array(coursesViewScheme).parse(res.rows)
+	const courses = await getCoursesData({ category })
 
 	return { categories, courses }
 }
@@ -44,6 +23,23 @@ export default function Courses() {
 	const { categories, courses }: { categories: Category[], courses: CoursesView[] } = useLoaderData()
 	const [searchParams] = useSearchParams()
 	const activeCategory = searchParams.get('cat') ?? 'all'
+	const [searchQuery, setSearchQuery] = useState('')
+	const deferredSearchQuery = useDeferredValue(searchQuery)
+	const normalizedSearchQuery = deferredSearchQuery.trim().toLowerCase()
+	const filteredCourses = normalizedSearchQuery
+		? courses.filter((course) => {
+			const haystack = [
+				course.title,
+				course.description,
+				course.instructor,
+				course.category,
+			]
+				.join(' ')
+				.toLowerCase()
+
+			return haystack.includes(normalizedSearchQuery)
+		})
+		: courses
 
 	return (
 		<div className="space-y-8">
@@ -62,13 +58,12 @@ export default function Courses() {
 						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
 						<input
 							type="text"
+							value={searchQuery}
+							onChange={(event) => setSearchQuery(event.target.value)}
 							placeholder="Search courses..."
-							className="pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all w-full md:w-64"
+							className="pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-emerald-500/10 focus:border-slate-700 outline-none transition-all w-full md:w-64"
 						/>
 					</div>
-					<button className="p-2 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 transition-colors">
-						<Filter className="w-5 h-5 text-slate-400" />
-					</button>
 				</div>
 			</div>
 
@@ -78,7 +73,7 @@ export default function Courses() {
 					to="/courses"
 					className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
 						activeCategory === 'all'
-							? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
+							? 'bg-slate-800 text-white border border-slate-700'
 							: 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-200'
 					}`}
 				>
@@ -89,7 +84,7 @@ export default function Courses() {
 						key={cat.id}
 						to={`?cat=${cat.name}`}
 						className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${activeCategory === cat.name
-							? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
+							? 'bg-slate-800 text-white border border-slate-700'
 							: 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-200'
 							}`}
 					>
@@ -99,20 +94,20 @@ export default function Courses() {
 			</div>
 
 			{/* Course Grid */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-				{courses.map((course) => {
-					console.log(course)
+			{filteredCourses.length > 0 ? (
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+					{filteredCourses.map((course) => {
 					return (
 						<Link
 							key={course.id}
 							to={`/courses/${course.id}`}
-							className="group flex flex-col bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+							className="group flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 transition-colors duration-300"
 						>
 							<div className="aspect-[16/10] overflow-hidden relative">
 								<img
 									src={course.thumbnail}
 									alt={course.title}
-									className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+									className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
 									referrerPolicy="no-referrer"
 								/>
 								<div className="absolute top-4 left-4">
@@ -156,15 +151,25 @@ export default function Courses() {
 											{course.instructor}
 										</span>
 									</div>
-									<div className="text-emerald-500 group-hover:translate-x-1 transition-transform">
+									<div className="text-slate-500 group-hover:text-slate-300 transition-colors">
 										<ChevronRight className="w-5 h-5" />
 									</div>
 								</div>
 							</div>
 						</Link>
 					)
-				})}
-			</div>
+					})}
+				</div>
+			) : (
+				<div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/50 px-6 py-12 text-center">
+					<h2 className="text-lg font-bold text-white">
+						No courses found
+					</h2>
+					<p className="mt-2 text-sm text-slate-400">
+						Try a different search term{activeCategory !== 'all' ? ` in ${activeCategory}` : ''}.
+					</p>
+				</div>
+			)}
 		</div>
 	)
 }

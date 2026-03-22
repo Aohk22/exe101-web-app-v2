@@ -71,7 +71,7 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
 						initial={{ opacity: 0, scale: 0.95, y: 20 }}
 						animate={{ opacity: 1, scale: 1, y: 0 }}
 						exit={{ opacity: 0, scale: 0.95, y: 20 }}
-						className="relative w-full max-w-6xl bg-slate-900 rounded-[1.75rem] shadow-2xl overflow-hidden border border-slate-800"
+						className="relative w-full max-w-6xl bg-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-800"
 					>
 						<button
 							onClick={onClose}

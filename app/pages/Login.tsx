@@ -95,7 +95,7 @@ export default function Login() {
 				</div>
 
 				{/* Login Card */}
-				<div className="bg-slate-900 rounded-[1.75rem] shadow-2xl shadow-black/50 border border-slate-800 p-8 md:p-12">
+				<div className="bg-slate-900 rounded-xl shadow-2xl shadow-black/50 border border-slate-800 p-8 md:p-12">
 					<div className="mb-8">
 						<h2 className="text-2xl font-bold text-white">
 							Welcome Back

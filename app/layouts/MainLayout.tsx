@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation, useRouteLoaderData } from 'react-router'
+import { Outlet, Link, useLocation } from 'react-router'
 import {
 	LayoutDashboard,
 	BookOpen,
@@ -6,9 +6,7 @@ import {
 	Settings,
 	Bell,
 	Search,
-	User,
 	Zap,
-	Sparkles,
 	Sun,
 	Moon,
 } from 'lucide-react'
@@ -24,7 +22,6 @@ const navItems = [
 ]
 
 export default function MainLayout() {
-	const { user } = useRouteLoaderData('routes/protected')
 	const location = useLocation()
 	const [isPricingOpen, setIsPricingOpen] = useState(false)
 	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -151,7 +148,7 @@ export default function MainLayout() {
 					{/* Pro Upgrade Card in Sidebar */}
 					{!isSidebarCollapsed && (
 						<div className="mt-8 px-2">
-							<div className="bg-emerald-600 rounded-2xl p-4 text-white relative overflow-hidden group">
+							<div className="bg-emerald-600 rounded-xl p-4 text-white relative overflow-hidden group">
 								<div className="relative z-10">
 									<div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-3">
 										<Zap className="w-4 h-4" />
@@ -215,33 +212,6 @@ export default function MainLayout() {
 								<span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-slate-900"></span>
 							</button>
 						</div>
-
-						<div className="h-8 w-px bg-slate-800"></div>
-
-						<Link
-							to="/profile"
-							className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-700"
-						>
-							<div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border border-slate-600">
-								<User className="w-5 h-5 text-slate-400" />
-							</div>
-							<div className="hidden sm:block text-left">
-								<p className="text-xs font-bold text-white leading-none">
-									{user.name}
-								</p>
-								<p className="text-[10px] text-slate-400 mt-1 leading-none">
-									Pro Learner
-								</p>
-							</div>
-						</Link>
-
-						<button
-							onClick={() => setIsPricingOpen(true)}
-							className="hidden lg:flex bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-900/20 items-center gap-2"
-						>
-							<Sparkles className="w-4 h-4" />
-							Upgrade
-						</button>
 					</div>
 				</header>
 

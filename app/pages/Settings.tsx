@@ -1,14 +1,16 @@
 import React, { useState } from 'react'
 import {
 	User,
-	Mail,
 	Bell,
 	Shield,
 	Moon,
 	Globe,
 	LogOut,
 	Camera,
-	Check,
+	Award,
+	CreditCard,
+	Star,
+	Flame,
 	ChevronRight,
 } from 'lucide-react'
 import { motion } from 'motion/react'
@@ -29,71 +31,105 @@ export default function Settings() {
 	const [activeTab, setActiveTab] = useState('profile')
 
 	const tabs = [
-		{ id: 'profile', label: 'Profile', icon: User },
+		{ id: 'profile', label: 'Account', icon: User },
+		{ id: 'certificates', label: 'Certificates', icon: Award },
+		{ id: 'transactions', label: 'Transactions', icon: CreditCard },
 		{ id: 'notifications', label: 'Notifications', icon: Bell },
 		{ id: 'security', label: 'Security', icon: Shield },
 		{ id: 'preferences', label: 'Preferences', icon: Globe },
 	]
 
+	const certificates = [
+		{
+			title: 'Ethical Hacking Professional',
+			date: 'Mar 12, 2026',
+			issuer: 'CyberSpace Academy',
+			id: 'CERT-EH-9921',
+		},
+		{
+			title: 'Network Defense Specialist',
+			date: 'Feb 28, 2026',
+			issuer: 'CyberSpace Academy',
+			id: 'CERT-ND-8812',
+		},
+		{
+			title: 'Cloud Security Fundamentals',
+			date: 'Jan 15, 2026',
+			issuer: 'CyberSpace Academy',
+			id: 'CERT-CS-7734',
+		},
+	]
+
+	const transactions = [
+		{
+			id: 'TX-12345',
+			date: 'Mar 10, 2026',
+			amount: '$49.00',
+			status: 'Completed',
+			item: 'Pro Monthly Subscription',
+		},
+		{
+			id: 'TX-12344',
+			date: 'Feb 10, 2026',
+			amount: '$49.00',
+			status: 'Completed',
+			item: 'Pro Monthly Subscription',
+		},
+		{
+			id: 'TX-12343',
+			date: 'Jan 15, 2026',
+			amount: '$19.00',
+			status: 'Completed',
+			item: 'Advanced Network Security Course',
+		},
+	]
+
 	return (
 		<div className="max-w-4xl mx-auto pb-20">
 			<header className="mb-10">
-				<h1 className="text-3xl font-bold text-white">Settings</h1>
+				<h1 className="text-3xl font-bold text-white">
+					Account Settings
+				</h1>
 				<p className="text-slate-400 mt-1">
-					Manage your account and app preferences.
+					Manage your profile, rewards, billing, and app preferences in one place.
 				</p>
 			</header>
 
-			<div className="flex flex-col md:flex-row gap-10">
-				{/* Sidebar Tabs */}
-				<aside className="md:w-64 shrink-0">
-					<nav className="space-y-1">
-						{tabs.map((tab) => (
-							<button
-								key={tab.id}
-								onClick={() => setActiveTab(tab.id)}
-								className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${activeTab === tab.id
-									? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
-									: 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-									}`}
-							>
-								<tab.icon className="w-5 h-5" />
-								{tab.label}
-							</button>
-						))}
-					</nav>
-
-					<div className="mt-10 pt-10 border-t border-slate-800">
-						<Form method="POST">
-							<button type='submit' className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-red-400 hover:bg-red-400/10 transition-all">
-								<LogOut className="w-5 h-5" />
-								Sign Out
-							</button>
-						</Form>
-					</div>
-				</aside>
-
-				{/* Content Area */}
-				<div className="flex-1">
-					<motion.div
-						key={activeTab}
-						initial={{ opacity: 0, x: 10 }}
-						animate={{ opacity: 1, x: 0 }}
-						transition={{ duration: 0.3 }}
-						className="bg-slate-900 rounded-[1.75rem] border border-slate-800 p-8 md:p-10 shadow-sm"
+			<nav className="mb-8 flex flex-wrap gap-2 border-b border-slate-800 pb-3">
+				{tabs.map((tab) => (
+					<button
+						key={tab.id}
+						onClick={() => setActiveTab(tab.id)}
+						className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-all ${activeTab === tab.id
+							? 'bg-slate-800 text-white border border-slate-700'
+							: 'text-slate-400 border border-transparent hover:bg-slate-800 hover:text-slate-200 hover:border-slate-700'
+							}`}
 					>
+						<tab.icon className="w-4 h-4" />
+						{tab.label}
+					</button>
+				))}
+			</nav>
+
+			<motion.div
+				key={activeTab}
+				initial={{ opacity: 0, x: 10 }}
+				animate={{ opacity: 1, x: 0 }}
+				transition={{ duration: 0.3 }}
+				className="bg-slate-900 rounded-xl border border-slate-800 p-8 md:p-10"
+			>
 						{activeTab === 'profile' && (
 							<div className="space-y-8">
 								<div>
 									<h2 className="text-xl font-bold text-white mb-6">
-										Profile Information
+										Account Information
 									</h2>
 									<div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
 										<div className="relative group">
-											<div className="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden border-4 border-slate-900 shadow-md">
+											<div className="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-700">
 												<User className="w-12 h-12 text-slate-600" />
 											</div>
-											<button className="absolute bottom-0 right-0 p-2 bg-emerald-600 text-white rounded-full shadow-lg hover:bg-emerald-700 transition-all">
+											<button className="absolute bottom-0 right-0 p-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-full hover:bg-slate-700 transition-all">
 												<Camera className="w-4 h-4" />
 											</button>
 										</div>
@@ -104,6 +140,16 @@ export default function Settings() {
 											<p className="text-sm text-slate-400">
 												Pro Learner since Oct 2025
 											</p>
+											<div className="flex items-center gap-4 mt-3 justify-center sm:justify-start">
+												<div className="flex items-center gap-1 text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-1 rounded-lg">
+													<Star className="w-3 h-3 fill-current" />
+													2,450 XP
+												</div>
+												<div className="flex items-center gap-1 text-xs font-bold text-orange-400 bg-orange-400/10 px-2 py-1 rounded-lg">
+													<Flame className="w-3 h-3 fill-current" />
+													15 Day Streak
+												</div>
+											</div>
 										</div>
 									</div>
 
@@ -145,9 +191,100 @@ export default function Settings() {
 									<button className="px-6 py-3 text-sm font-bold text-slate-400 hover:text-slate-200 transition-colors">
 										Cancel
 									</button>
-									<button className="px-8 py-3 bg-emerald-600 text-white rounded-2xl text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-900/20 transition-all">
+									<button className="px-8 py-3 bg-slate-100 text-slate-950 rounded-2xl text-sm font-bold hover:bg-white transition-all">
 										Save Changes
 									</button>
+								</div>
+							</div>
+						)}
+
+						{activeTab === 'certificates' && (
+							<div className="space-y-8">
+								<div className="flex items-center justify-between">
+									<h2 className="text-xl font-bold text-white">
+										Your Certificates
+									</h2>
+									<div className="flex items-center gap-2 text-sm font-bold text-emerald-400">
+										<Award className="w-5 h-5" />
+										{certificates.length} Certificates Earned
+									</div>
+								</div>
+
+								<div className="grid grid-cols-1 gap-4">
+									{certificates.map((cert) => (
+										<div
+											key={cert.id}
+											className="p-6 bg-slate-800/50 border border-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-emerald-500/50 transition-all group"
+										>
+											<div className="flex items-center gap-4">
+												<div className="w-14 h-14 bg-slate-800 rounded-xl flex items-center justify-center border border-slate-700 group-hover:scale-105 transition-transform">
+													<Award className="w-8 h-8 text-emerald-500" />
+												</div>
+												<div>
+													<h4 className="font-bold text-white text-base">
+														{cert.title}
+													</h4>
+													<p className="text-xs text-slate-400">
+														Issued by {cert.issuer} • {cert.date}
+													</p>
+													<p className="text-[10px] font-mono text-slate-500 mt-1">
+														ID: {cert.id}
+													</p>
+												</div>
+											</div>
+											<button className="px-4 py-2 bg-slate-800 border border-slate-700 text-slate-300 rounded-xl text-xs font-bold hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all flex items-center justify-center gap-2">
+												View Certificate
+												<ChevronRight className="w-4 h-4" />
+											</button>
+										</div>
+									))}
+								</div>
+							</div>
+						)}
+
+						{activeTab === 'transactions' && (
+							<div className="space-y-8">
+								<div className="flex items-center justify-between">
+									<div>
+										<h2 className="text-xl font-bold text-white">
+											Transactions
+										</h2>
+										<p className="text-sm text-slate-400 mt-1">
+											Review your subscription and course purchase history.
+										</p>
+									</div>
+									<div className="rounded-xl border border-slate-800 bg-slate-800/50 px-4 py-3 text-right">
+										<p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+											Lifetime Spend
+										</p>
+										<p className="mt-1 text-lg font-bold text-white">$117.00</p>
+									</div>
+								</div>
+
+								<div className="space-y-4">
+									{transactions.map((transaction) => (
+										<div
+											key={transaction.id}
+											className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-slate-800/40 p-5 sm:flex-row sm:items-center sm:justify-between"
+										>
+											<div>
+												<p className="text-sm font-bold text-white">
+													{transaction.item}
+												</p>
+												<p className="mt-1 text-xs text-slate-400">
+													{transaction.date} • {transaction.id}
+												</p>
+											</div>
+											<div className="flex items-center gap-3 sm:gap-4">
+												<span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400">
+													{transaction.status}
+												</span>
+												<span className="text-sm font-bold text-white">
+													{transaction.amount}
+												</span>
+											</div>
+										</div>
+									))}
 								</div>
 							</div>
 						)}
@@ -214,9 +351,9 @@ export default function Settings() {
 									Security Settings
 								</h2>
 								<div className="space-y-6">
-									<div className="p-6 bg-slate-800/50 rounded-3xl border border-slate-800 flex items-center justify-between">
+									<div className="p-6 bg-slate-800/50 rounded-xl border border-slate-800 flex items-center justify-between">
 										<div className="flex items-center gap-4">
-											<div className="w-10 h-10 bg-slate-800 rounded-2xl flex items-center justify-center shadow-sm">
+											<div className="w-10 h-10 bg-slate-800 rounded-2xl flex items-center justify-center border border-slate-700">
 												<Shield className="w-5 h-5 text-emerald-400" />
 											</div>
 											<div>
@@ -314,8 +451,18 @@ export default function Settings() {
 								</div>
 							</div>
 						)}
-					</motion.div>
-				</div>
+			</motion.div>
+
+			<div className="mt-6 flex justify-end border-t border-slate-800 pt-6">
+				<Form method="POST">
+					<button
+						type="submit"
+						className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-400 transition-all hover:bg-red-400/10"
+					>
+						<LogOut className="w-5 h-5" />
+						Sign Out
+					</button>
+				</Form>
 			</div>
 		</div>
 	)

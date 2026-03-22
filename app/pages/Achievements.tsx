@@ -127,15 +127,12 @@ export default function Achievements() {
 			{/* Stats Overview */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 				{stats.map((stat, idx) => (
-					<motion.div
+					<div
 						key={stat.label}
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ delay: idx * 0.1 }}
-						className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-sm"
+						className="bg-slate-900 p-6 rounded-xl border border-slate-800"
 					>
 						<div
-							className={`w-12 h-12 ${stat.bg} rounded-2xl flex items-center justify-center mb-4`}
+							className={`w-12 h-12 ${stat.bg} rounded-lg flex items-center justify-center mb-4`}
 						>
 							<stat.icon className={`w-6 h-6 ${stat.color}`} />
 						</div>
@@ -145,7 +142,7 @@ export default function Achievements() {
 						<h3 className="text-2xl font-bold text-white mt-1">
 							{stat.value}
 						</h3>
-					</motion.div>
+					</div>
 				))}
 			</div>
 
@@ -166,7 +163,7 @@ export default function Achievements() {
 						{badges.map((badge) => (
 							<div
 								key={badge.id}
-								className="bg-slate-900 p-5 rounded-3xl border border-slate-800 flex items-center gap-4 hover:border-emerald-500/30 transition-colors group cursor-default"
+								className="bg-slate-900 p-5 rounded-xl border border-slate-800 flex items-center gap-4 hover:border-emerald-500/30 transition-colors group cursor-default"
 							>
 								<div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
 									{badge.icon}
@@ -210,7 +207,7 @@ export default function Achievements() {
 						Next Milestones
 					</h2>
 
-					<div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-8">
+					<div className="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-8">
 						{milestones.map((milestone) => (
 							<div key={milestone.title} className="space-y-3">
 								<div className="flex justify-between items-end">
@@ -227,16 +224,9 @@ export default function Achievements() {
 									</span>
 								</div>
 								<div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-									<motion.div
-										initial={{ width: 0 }}
-										animate={{
-											width: `${milestone.progress}%`,
-										}}
-										transition={{
-											duration: 1,
-											ease: 'easeOut',
-										}}
+									<div
 										className="h-full bg-emerald-500 rounded-full"
+										style={{ width: `${milestone.progress}%` }}
 									/>
 								</div>
 							</div>
@@ -249,7 +239,7 @@ export default function Achievements() {
 					</div>
 
 					{/* Leaderboard Preview */}
-					<div className="bg-emerald-600 rounded-3xl p-6 text-white overflow-hidden relative">
+					<div className="bg-emerald-600 rounded-xl p-6 text-white overflow-hidden relative">
 						<div className="relative z-10">
 							<div className="flex items-center gap-2 mb-4">
 								<TrendingUp className="w-5 h-5" />

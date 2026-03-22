@@ -25,7 +25,12 @@ export default function Dashboard() {
 	const continueCourse = courses[0]
 	const recommendedCourses = courses.slice(1)
 	const completedCourses = courses.filter((c) => c.completed === true)
+	const totalCourseSeconds = courses.reduce((acc, course) => acc + course.length, 0)
 	const learningSeconds = completedCourses.reduce((acc, course) => acc + course.length, 0)
+	const goalProgress =
+		totalCourseSeconds === 0
+			? 0
+			: Math.round((learningSeconds / totalCourseSeconds) * 100)
 
 	return (
 		<div className="space-y-10">
@@ -35,7 +40,7 @@ export default function Dashboard() {
 					Welcome back, {user.name}!
 				</h1>
 				<p className="text-slate-400 mt-1">
-					You've completed 45% of your weekly goal. Keep it up!
+					You've completed {goalProgress}% of your goal. Keep it up!
 				</p>
 			</section>
 
@@ -73,12 +78,12 @@ export default function Dashboard() {
 				].map((stat, i) => (
 					<div
 						key={i}
-						className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm"
+						className="bg-slate-900 border border-slate-800 p-6 rounded-xl"
 					>
 						<div
 							className={
 								stat.bg +
-								' w-10 h-10 rounded-xl flex items-center justify-center mb-4'
+								' w-10 h-10 rounded-lg flex items-center justify-center mb-4'
 							}
 						>
 							<stat.icon className={stat.color + ' w-5 h-5'} />

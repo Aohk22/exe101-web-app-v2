@@ -7,7 +7,7 @@ export default function RegisterSuccess() {
 			<motion.div
 				initial={{ opacity: 0, scale: 0.9 }}
 				animate={{ opacity: 1, scale: 1 }}
-				className="max-w-md w-full bg-white rounded-[1.75rem] shadow-2xl shadow-neutral-200/50 border border-neutral-100 p-12 text-center"
+				className="max-w-md w-full bg-white rounded-xl shadow-2xl shadow-neutral-200/50 border border-neutral-100 p-12 text-center"
 			>
 				<div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
 					<CheckCircle2 className="w-10 h-10 text-emerald-500" />

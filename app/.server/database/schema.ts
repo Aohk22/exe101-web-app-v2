@@ -43,6 +43,7 @@ export const lessons = pgTable('lessons', (t) => ({
 	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
 	title: t.varchar({ length: 255 }).notNull(),
 	length: t.integer().notNull(),
+	contentMd: t.text('content_md').notNull().default(''),
 
 	moduleId: t.integer('module_id').notNull(),
 }))

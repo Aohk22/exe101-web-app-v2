@@ -17,6 +17,7 @@ const courseDetailsSchema = z.object({
 	lessonId: z.coerce.number(),
 	lessonTitle: z.string(),
 	lessonLength: z.coerce.number(),
+	lessonContentMd: z.string(),
 	lessonCompleted: z.boolean().optional(),
 })
 
@@ -53,7 +54,8 @@ export async function getCourseDetailData(
 
 			l.id AS "lessonId",
 			l.title AS "lessonTitle",
-			l.length AS "lessonLength"
+			l.length AS "lessonLength",
+			l.content_md AS "lessonContentMd"
 			${enrolled ? sql`,utl.completed AS "lessonCompleted"` : sql``}
 		FROM courses c
 		INNER JOIN modules m ON c.id = m.course_id
@@ -99,6 +101,7 @@ export async function getCourseDetailData(
 			id: row.lessonId,
 			title: row.lessonTitle,
 			length: row.lessonLength,
+			contentMd: row.lessonContentMd,
 			completed: row.lessonCompleted,
 		})
 
