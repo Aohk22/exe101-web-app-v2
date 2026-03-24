@@ -9,7 +9,13 @@ import {
 	TrendingUp,
 	ChevronRight,
 } from 'lucide-react'
-import { motion } from 'motion/react'
+
+export const handle = {
+	section: {
+		title: 'Achievements',
+		subtitle: 'Track your progress and showcase your skills.',
+	},
+}
 
 export default function Achievements() {
 	const stats = [
@@ -116,14 +122,7 @@ export default function Achievements() {
 	]
 
 	return (
-		<div className="space-y-10 pb-10">
-			<header>
-				<h1 className="text-3xl font-bold text-white">Achievements</h1>
-				<p className="text-slate-400 mt-1">
-					Track your progress and showcase your skills.
-				</p>
-			</header>
-
+		<div className="space-y-10">
 			{/* Stats Overview */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 				{stats.map((stat, idx) => (
@@ -226,7 +225,9 @@ export default function Achievements() {
 								<div className="h-2 bg-slate-800 rounded-full overflow-hidden">
 									<div
 										className="h-full bg-emerald-500 rounded-full"
-										style={{ width: `${milestone.progress}%` }}
+										style={{
+											width: `${milestone.progress}%`,
+										}}
 									/>
 								</div>
 							</div>

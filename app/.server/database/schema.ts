@@ -2,11 +2,15 @@ import { pgTable, primaryKey } from 'drizzle-orm/pg-core'
 import { createSelectSchema } from 'drizzle-zod'
 // import { defineRelations } from 'drizzle-orm'
 
+export const USER_ROLES = ['learner', 'staff'] as const
+export type UserRole = (typeof USER_ROLES)[number]
+
 export const users = pgTable('users', (t) => ({
 	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
 	name: t.varchar({ length: 255 }).notNull(),
 	email: t.varchar({ length: 255 }).notNull().unique(),
 	password: t.text().notNull(),
+	role: t.varchar({ length: 20 }).notNull().default('learner'),
 }))
 
 export const reviews = pgTable('reviews', (t) => ({
@@ -30,7 +34,10 @@ export const courses = pgTable('courses', (t) => ({
 	thumbnail: t.text().notNull(),
 	length: t.integer().notNull(),
 
-	categoryId: t.integer('category_id').notNull().references(() => categories.id),
+	categoryId: t
+		.integer('category_id')
+		.notNull()
+		.references(() => categories.id),
 }))
 
 export const modules = pgTable('modules', (t) => ({
@@ -66,9 +73,15 @@ export const usersToCourses = pgTable(
 export const usersToLessons = pgTable(
 	'users_to_lessons',
 	(t) => ({
-		userId: t.integer('user_id').notNull().references(()=>users.id),
-		lessonId: t.integer('lesson_id').notNull().references(()=>lessons.id),
-		completed: t.boolean().notNull().default(false)
+		userId: t
+			.integer('user_id')
+			.notNull()
+			.references(() => users.id),
+		lessonId: t
+			.integer('lesson_id')
+			.notNull()
+			.references(() => lessons.id),
+		completed: t.boolean().notNull().default(false),
 	}),
 	(t) => [primaryKey({ columns: [t.userId, t.lessonId] })],
 )

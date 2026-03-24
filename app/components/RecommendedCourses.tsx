@@ -4,7 +4,7 @@ import type { DashboardData } from '~/.server/queries/dashboard'
 import { formatCourseLength } from '~/utils/format-course-length'
 
 export default function RecommendedCourses({
-	courses
+	courses,
 }: {
 	courses: DashboardData[]
 }) {

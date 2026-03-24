@@ -1,5 +1,13 @@
 import { db } from '~/.server/database/connection'
-import { users, courses, modules, lessons, usersToCourses, usersToLessons, reviews } from './schema'
+import {
+	users,
+	courses,
+	modules,
+	lessons,
+	usersToCourses,
+	usersToLessons,
+	reviews,
+} from './schema'
 
 async function wipe() {
 	console.log('🗑️  Wiping database...')

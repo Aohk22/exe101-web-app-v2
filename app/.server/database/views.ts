@@ -7,9 +7,9 @@ import type { LucideIcon } from 'lucide-react'
 import { z } from 'zod'
 
 export const navItemSchema = z.object({
-  label: z.string(),
-  href: z.string(),
-  icon: z.custom<LucideIcon>(),
+	label: z.string(),
+	href: z.string(),
+	icon: z.custom<LucideIcon>(),
 })
 
 export type NavItem = z.infer<typeof navItemSchema>

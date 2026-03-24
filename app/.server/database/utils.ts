@@ -1,4 +1,10 @@
-import type { Category, Course, Lesson, Module, User } from '~/.server/database/schema'
+import type {
+	Category,
+	Course,
+	Lesson,
+	Module,
+	User,
+} from '~/.server/database/schema'
 import {
 	categorySchema,
 	courseSchema,
@@ -22,7 +28,9 @@ export type CourseWithLessonCount = z.infer<typeof courseWithLessonCountSchema>
 export type CourseWithProgress = z.infer<typeof courseWithProgressSchema>
 
 export async function getUserById(userId: string): Promise<User | null> {
-	const res = await db.execute(sql`SELECT u.* FROM users u WHERE u.id = ${userId} LIMIT 1`)
+	const res = await db.execute(
+		sql`SELECT u.* FROM users u WHERE u.id = ${userId} LIMIT 1`,
+	)
 	const user = z.safeParse(userSchema, res.rows[0])
 	if (user.success) {
 		return user.data
@@ -37,9 +45,10 @@ export async function getCategories(): Promise<Category[]> {
 	return z.array(categorySchema).parse(res.rows)
 }
 
-
 export async function getCourse(courseId: number): Promise<Course | null> {
-	const result = await db.execute(sql`SELECT c.* FROM courses WHERE c.id = ${courseId}`)
+	const result = await db.execute(
+		sql`SELECT c.* FROM courses WHERE c.id = ${courseId}`,
+	)
 
 	const course = z.safeParse(courseSchema, result)
 	if (course.success) {
@@ -55,7 +64,9 @@ export async function getCourses(): Promise<Course[]> {
 	return z.array(courseSchema).parse(res.rows)
 }
 
-export async function getCoursesWithLessonCount(): Promise<CourseWithLessonCount[]> {
+export async function getCoursesWithLessonCount(): Promise<
+	CourseWithLessonCount[]
+> {
 	const res = await db.execute(sql`
 		SELECT 
 			c.id, c.title, c.description, c.instructor, c.thumbnail, c.length, 
@@ -86,7 +97,9 @@ export async function getCourseByUser(userId: number): Promise<Course[]> {
 	return z.array(courseSchema).parse(result.rows)
 }
 
-export async function getCourseByUserWithProgress(userId: number): Promise<CourseWithProgress[]> {
+export async function getCourseByUserWithProgress(
+	userId: number,
+): Promise<CourseWithProgress[]> {
 	const res = await db.execute(sql`
 		SELECT 
 			c.id, c.title, c.description, c.instructor, c.thumbnail, c.length, 

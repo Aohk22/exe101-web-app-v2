@@ -22,8 +22,8 @@ export async function getCoursesData({
 			COUNT(l.id) AS lessons_count
 		FROM courses c
 		INNER JOIN categories cat ON c.category_id = cat.id
-		INNER JOIN modules m ON c.id = m.course_id
-		INNER JOIN lessons l ON m.id = l.module_id
+		LEFT JOIN modules m ON c.id = m.course_id
+		LEFT JOIN lessons l ON m.id = l.module_id
 		WHERE 1 = 1
 		${category ? sql`AND cat.name = ${category}` : sql``}
 		GROUP BY c.id, cat.name

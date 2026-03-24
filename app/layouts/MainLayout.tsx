@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router'
+import { Outlet, Link, useLocation, useMatches } from 'react-router'
 import {
 	LayoutDashboard,
 	BookOpen,
@@ -9,12 +9,14 @@ import {
 	Zap,
 	Sun,
 	Moon,
+	SquarePen,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import PricingModal from '~/components/PricingModal'
+import type { User } from '~/.server/database/schema'
 
-const navItems = [
+const baseNavItems = [
 	{ label: 'Dashboard', href: '/', icon: LayoutDashboard },
 	{ label: 'My Courses', href: '/courses', icon: BookOpen },
 	{ label: 'Achievements', href: '/achievements', icon: GraduationCap },
@@ -23,6 +25,7 @@ const navItems = [
 
 export default function MainLayout() {
 	const location = useLocation()
+	const matches = useMatches()
 	const [isPricingOpen, setIsPricingOpen] = useState(false)
 	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 	const [sidebarWidth, setSidebarWidth] = useState(256)
@@ -31,6 +34,30 @@ export default function MainLayout() {
 		isResizing: false,
 		lastExpandedWidth: 256,
 	})
+	const currentUser = matches
+		.map((match) => {
+			if (
+				match.data &&
+				typeof match.data === 'object' &&
+				'user' in match.data
+			) {
+				return match.data.user as User
+			}
+
+			return null
+		})
+		.find((user) => user !== null)
+	const navItems =
+		currentUser?.role === 'staff'
+			? [
+					...baseNavItems,
+					{
+						label: 'Course Builder',
+						href: '/course-builder',
+						icon: SquarePen,
+					},
+				]
+			: baseNavItems
 
 	useEffect(() => {
 		const storedTheme = window.localStorage.getItem('theme')
@@ -131,13 +158,18 @@ export default function MainLayout() {
 								key={item.href}
 								to={item.href}
 								className={
-									`flex items-center px-6 py-3 text-sm font-medium transition-colors relative ${isSidebarCollapsed ? 'justify-center' : 'gap-3'
+									`flex items-center px-6 py-3 text-sm font-medium transition-colors relative ${
+										isSidebarCollapsed
+											? 'justify-center'
+											: 'gap-3'
 									} ` +
 									(isActive
 										? 'bg-emerald-500/10 text-emerald-400 border-r-2 border-emerald-500'
 										: 'text-slate-400 hover:bg-slate-800 hover:text-white')
 								}
-								title={isSidebarCollapsed ? item.label : undefined}
+								title={
+									isSidebarCollapsed ? item.label : undefined
+								}
 							>
 								<item.icon className="w-5 h-5" />
 								{!isSidebarCollapsed && item.label}
@@ -146,16 +178,19 @@ export default function MainLayout() {
 					})}
 
 					{/* Pro Upgrade Card in Sidebar */}
-					{!isSidebarCollapsed && (
+					{!isSidebarCollapsed && currentUser?.role !== 'staff' && (
 						<div className="mt-8 px-2">
 							<div className="bg-emerald-600 rounded-xl p-4 text-white relative overflow-hidden group">
 								<div className="relative z-10">
 									<div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mb-3">
 										<Zap className="w-4 h-4" />
 									</div>
-									<p className="font-bold text-sm mb-1">Go Pro</p>
+									<p className="font-bold text-sm mb-1">
+										Go Pro
+									</p>
 									<p className="text-[10px] text-emerald-100 mb-3">
-										Unlock all premium courses and certificates.
+										Unlock all premium courses and
+										certificates.
 									</p>
 									<button
 										onClick={() => setIsPricingOpen(true)}

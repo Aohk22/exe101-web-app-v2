@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import type { DashboardData } from '~/.server/queries/dashboard'
 
 export default function ContinueLearning({
-	course
+	course,
 }: {
 	course: DashboardData
 }) {
@@ -27,7 +27,10 @@ export default function ContinueLearning({
 			</section>
 		)
 	}
-	const percent = (course.lessonsCompleted / course.lessonsCount * 100).toFixed(2)
+	const percent = (
+		(course.lessonsCompleted / course.lessonsCount) *
+		100
+	).toFixed(2)
 	return (
 		<section>
 			<div className="flex items-center justify-between mb-6">

@@ -1,5 +1,10 @@
-import { Form, Link, redirect, useLoaderData, useNavigation } from 'react-router'
-import { useEffect, useState } from 'react'
+import {
+	Link,
+	redirect,
+	useLoaderData,
+	useNavigation,
+} from 'react-router'
+import CoursePreviewCard from '~/components/CoursePreviewCard'
 import {
 	Play,
 	CheckCircle2,
@@ -7,7 +12,6 @@ import {
 	BookOpen,
 	User,
 	Star,
-	Share2,
 	ChevronRight,
 	GraduationCap,
 } from 'lucide-react'
@@ -61,12 +65,14 @@ export async function action({ context, params, request }: Route.ActionArgs) {
 }
 
 export default function CourseDetail() {
-	const {enrolled, course}: {
-		enrolled: boolean,
+	const {
+		enrolled,
+		course,
+	}: {
+		enrolled: boolean
 		course: CourseDetails
 	} = useLoaderData()
 	const navigation = useNavigation()
-	const [shareState, setShareState] = useState<'idle' | 'copied' | 'error'>('idle')
 	const modules = course.modules
 	const lessonsCount = modules.reduce(
 		(acc, module) => acc + module.lessons.length,
@@ -84,27 +90,6 @@ export default function CourseDetail() {
 	const continuePath = continueLesson
 		? `/courses/${course.id}/lessons/${continueLesson.id}`
 		: `/courses/${course.id}`
-
-	useEffect(() => {
-		if (shareState === 'idle') {
-			return
-		}
-
-		const timeoutId = window.setTimeout(() => {
-			setShareState('idle')
-		}, 2000)
-
-		return () => window.clearTimeout(timeoutId)
-	}, [shareState])
-
-	async function copyCourseAddress() {
-		try {
-			await navigator.clipboard.writeText(window.location.href)
-			setShareState('copied')
-		} catch {
-			setShareState('error')
-		}
-	}
 
 	return (
 		<div className="space-y-8">
@@ -175,59 +160,12 @@ export default function CourseDetail() {
 					</div>
 				</div>
 
-				<div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl shadow-black/20 space-y-6">
-					<div className="aspect-video rounded-2xl overflow-hidden relative group">
-						<img
-							src={course?.thumbnail ?? 'https://picsum.photos/seed/course/1280/720'}
-							alt={course?.title ?? 'Course'}
-							className="w-full h-full object-cover"
-							referrerPolicy="no-referrer"
-						/>
-						<div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-							<div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-								<Play className="w-6 h-6 text-emerald-600 fill-emerald-600 ml-1" />
-							</div>
-						</div>
-					</div>
-
-					<div className="space-y-4">
-							{enrolled ? (
-								<Link
-									to={continuePath}
-									className="flex w-full items-center justify-center py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98]"
-								>
-									Continue
-								</Link>
-						) : (
-							<Form method="post">
-								<button
-									type="submit"
-									disabled={isSubmittingEnrollment}
-									className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
-								>
-									{isSubmittingEnrollment
-										? 'Enrolling...'
-										: 'Enroll Now'}
-								</button>
-							</Form>
-						)}
-
-						<div className="grid grid-cols-1 gap-2">
-							<button
-								type="button"
-								onClick={copyCourseAddress}
-								className="w-full py-4 flex items-center justify-center gap-2 border border-slate-800 rounded-2xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors"
-							>
-								<Share2 className="w-4 h-4" />
-								{shareState === 'copied'
-									? 'Copied'
-									: shareState === 'error'
-										? 'Copy Failed'
-										: 'Share'}
-							</button>
-						</div>
-					</div>
-				</div>
+				<CoursePreviewCard
+					course={course}
+					continuePath={continuePath}
+					enrolled={enrolled}
+					isSubmittingEnrollment={isSubmittingEnrollment}
+				/>
 
 				{/* Curriculum */}
 				{enrolled ? (
@@ -295,7 +233,9 @@ export default function CourseDetail() {
 															</span>
 															<span className="w-0.5 h-0.5 bg-slate-700 rounded-full"></span>
 															<span className="text-[10px] text-slate-500">
-																{formatLessonLength(lesson.length)}
+																{formatLessonLength(
+																	lesson.length,
+																)}
 															</span>
 														</div>
 													</div>
@@ -345,21 +285,28 @@ export default function CourseDetail() {
 											</p>
 										</div>
 										<div className="mt-4 space-y-2 border-t border-slate-800 pt-4">
-											{module.lessons.map((lesson, lessonIndex) => (
-												<div
-													key={lesson.id}
-													className="flex items-center justify-between gap-4 text-sm"
-												>
-													<div className="min-w-0 text-slate-300">
-														<p className="truncate">
-															Lesson {lessonIndex + 1}: {lesson.title}
+											{module.lessons.map(
+												(lesson, lessonIndex) => (
+													<div
+														key={lesson.id}
+														className="flex items-center justify-between gap-4 text-sm"
+													>
+														<div className="min-w-0 text-slate-300">
+															<p className="truncate">
+																Lesson{' '}
+																{lessonIndex +
+																	1}
+																: {lesson.title}
+															</p>
+														</div>
+														<p className="shrink-0 text-xs text-slate-500">
+															{formatLessonLength(
+																lesson.length,
+															)}
 														</p>
 													</div>
-													<p className="shrink-0 text-xs text-slate-500">
-														{formatLessonLength(lesson.length)}
-													</p>
-												</div>
-											))}
+												),
+											)}
 										</div>
 									</div>
 								))}

@@ -15,6 +15,14 @@ import {
 } from 'lucide-react'
 import { motion } from 'motion/react'
 
+export const handle = {
+	section: {
+		title: 'Profile',
+		subtitle: 'Manage your personal information and track your journey.',
+		contentClassName: 'mx-auto max-w-5xl',
+	},
+}
+
 export default function Profile() {
 	const [activeTab, setActiveTab] = useState('profile')
 
@@ -74,15 +82,7 @@ export default function Profile() {
 	]
 
 	return (
-		<div className="max-w-5xl mx-auto pb-20">
-			<header className="mb-10">
-				<h1 className="text-3xl font-bold text-white">Profile</h1>
-				<p className="text-slate-400 mt-1">
-					Manage your personal information and track your journey.
-				</p>
-			</header>
-
-			<div className="space-y-6">
+		<div className="space-y-6">
 				{/* Navigation Tabs */}
 				<nav className="flex overflow-x-auto pb-2 gap-2 no-scrollbar border-b border-slate-800">
 					{tabs.map((tab) => (
@@ -365,7 +365,6 @@ export default function Profile() {
 						</div>
 					)}
 				</motion.div>
-			</div>
 		</div>
 	)
 }

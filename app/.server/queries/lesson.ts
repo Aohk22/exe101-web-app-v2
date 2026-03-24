@@ -1,4 +1,7 @@
-import { getCourseDetailData, type CourseDetails } from '~/.server/queries/course-detail'
+import {
+	getCourseDetailData,
+	type CourseDetails,
+} from '~/.server/queries/course-detail'
 
 type LessonWithModule = CourseDetails['modules'][number]['lessons'][number] & {
 	moduleId: number
@@ -31,23 +34,28 @@ export async function getLessonPageData({
 		return null
 	}
 
-	const allLessons = courseData.course.modules.flatMap((module, moduleIndex) =>
-		module.lessons.map((lesson, lessonIndex) => ({
-			...lesson,
-			moduleId: module.id,
-			moduleTitle: module.title,
-			moduleIndex,
-			lessonIndex,
-		})),
+	const allLessons = courseData.course.modules.flatMap(
+		(module, moduleIndex) =>
+			module.lessons.map((lesson, lessonIndex) => ({
+				...lesson,
+				moduleId: module.id,
+				moduleTitle: module.title,
+				moduleIndex,
+				lessonIndex,
+			})),
 	)
 
-	const currentLessonIndex = allLessons.findIndex((lesson) => lesson.id === lessonId)
+	const currentLessonIndex = allLessons.findIndex(
+		(lesson) => lesson.id === lessonId,
+	)
 	if (currentLessonIndex === -1) {
 		return null
 	}
 
 	const currentLesson = allLessons[currentLessonIndex]
-	const completedLessonsCount = allLessons.filter((lesson) => lesson.completed).length
+	const completedLessonsCount = allLessons.filter(
+		(lesson) => lesson.completed,
+	).length
 	const totalLessonsCount = allLessons.length
 	const progressPercent =
 		totalLessonsCount === 0

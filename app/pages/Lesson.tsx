@@ -1,9 +1,5 @@
 import { Link, redirect, useLoaderData } from 'react-router'
-import {
-	ChevronLeft,
-	ChevronRight,
-	BookOpen,
-} from 'lucide-react'
+import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
 import { userContext } from '~/context'
 import type { Route } from './+types/Lesson'
 import { NoUserContextError } from '~/error'
@@ -65,7 +61,8 @@ export default function Lesson() {
 					</Link>
 					<div>
 						<h1 className="text-xl font-bold text-white">
-							{currentLesson.lessonIndex + 1}. {currentLesson.title}
+							{currentLesson.lessonIndex + 1}.{' '}
+							{currentLesson.title}
 						</h1>
 						<p className="text-sm text-slate-400">{course.title}</p>
 					</div>
@@ -108,7 +105,8 @@ export default function Lesson() {
 							{currentLesson.title}
 						</h2>
 						<p className="mt-2 text-sm text-slate-400">
-							{completedLessonsCount}/{totalLessonsCount} lessons completed • {progressPercent}% progress
+							{completedLessonsCount}/{totalLessonsCount} lessons
+							completed • {progressPercent}% progress
 						</p>
 					</div>
 					<div className="shrink-0 rounded-xl border border-slate-800 bg-slate-800/50 px-4 py-2 text-sm font-medium text-slate-300">

@@ -1,26 +1,27 @@
-import { sql } from "drizzle-orm";
-import { db } from "../database/connection";
+import { sql } from 'drizzle-orm'
+import { db } from '../database/connection'
 import { z } from 'zod'
 
 const dashboardDataSchema = z.object({
-    id: z.coerce.number(),
-    title: z.string(),
-    description: z.string(),
-    instructor: z.string(),
-    thumbnail: z.string(),
-    length: z.coerce.number(),
-    category: z.string(),
-    lessonsCount: z.coerce.number(),
-    lessonsCompleted: z.coerce.number(),
-    completed: z.boolean(),
+	id: z.coerce.number(),
+	title: z.string(),
+	description: z.string(),
+	instructor: z.string(),
+	thumbnail: z.string(),
+	length: z.coerce.number(),
+	category: z.string(),
+	lessonsCount: z.coerce.number(),
+	lessonsCompleted: z.coerce.number(),
+	completed: z.boolean(),
 })
 
 export type DashboardData = z.infer<typeof dashboardDataSchema>
 
 export async function getDashboardData(
-    userId: number
+	userId: number,
 ): Promise<DashboardData[]> {
-    const res = (await db.execute(sql`
+	const res = (
+		await db.execute(sql`
 		SELECT 
 			c.id, 
             c.title,
@@ -47,14 +48,15 @@ export async function getDashboardData(
 		INNER JOIN users u on utl.user_id = u.id
 		WHERE u.id = ${userId}
 		GROUP BY c.id, cat.name
-	`)).rows
+	`)
+	).rows
 
-    console.log(res)
+	console.log(res)
 
-    if (res.length === 0) {
-        return []
-    }
+	if (res.length === 0) {
+		return []
+	}
 
-    const data = z.array(dashboardDataSchema).parse(res)
-    return data
+	const data = z.array(dashboardDataSchema).parse(res)
+	return data
 }

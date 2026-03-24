@@ -6,8 +6,38 @@ import ContinueLearning from '~/components/ContinueLearning'
 import RecommendedCourses from '~/components/RecommendedCourses'
 import type { User } from '~/.server/database/schema'
 import { NoUserContextError } from '~/error'
-import { getDashboardData, type DashboardData } from '~/.server/queries/dashboard'
+import {
+	getDashboardData,
+	type DashboardData,
+} from '~/.server/queries/dashboard'
 import { formatCourseLength } from '~/utils/format-course-length'
+
+export const handle = {
+	section: {
+		title: (match: { data?: unknown }) => {
+			const data = match.data as { user?: User } | undefined
+			return `Welcome back, ${data?.user?.name ?? 'there'}!`
+		},
+		subtitle: (match: { data?: unknown }) => {
+			const data =
+				match.data as { courses?: DashboardData[] } | undefined
+			const courses = data?.courses ?? []
+			const totalCourseSeconds = courses.reduce(
+				(acc, course) => acc + course.length,
+				0,
+			)
+			const learningSeconds = courses
+				.filter((course) => course.completed === true)
+				.reduce((acc, course) => acc + course.length, 0)
+			const goalProgress =
+				totalCourseSeconds === 0
+					? 0
+					: Math.round((learningSeconds / totalCourseSeconds) * 100)
+
+			return `You've completed ${goalProgress}% of your goal. Keep it up!`
+		},
+	},
+}
 
 export async function loader({ context }: Route.LoaderArgs) {
 	const user = context.get(userContext)
@@ -21,29 +51,18 @@ export async function loader({ context }: Route.LoaderArgs) {
 }
 
 export default function Dashboard() {
-	const { user, courses }: { user: User, courses: DashboardData[] } = useLoaderData()
+	const { courses }: { user: User; courses: DashboardData[] } =
+		useLoaderData()
 	const continueCourse = courses[0]
 	const recommendedCourses = courses.slice(1)
 	const completedCourses = courses.filter((c) => c.completed === true)
-	const totalCourseSeconds = courses.reduce((acc, course) => acc + course.length, 0)
-	const learningSeconds = completedCourses.reduce((acc, course) => acc + course.length, 0)
-	const goalProgress =
-		totalCourseSeconds === 0
-			? 0
-			: Math.round((learningSeconds / totalCourseSeconds) * 100)
+	const learningSeconds = completedCourses.reduce(
+		(acc, course) => acc + course.length,
+		0,
+	)
 
 	return (
 		<div className="space-y-10">
-			{/* Welcome Section */}
-			<section>
-				<h1 className="text-3xl font-bold text-white">
-					Welcome back, {user.name}!
-				</h1>
-				<p className="text-slate-400 mt-1">
-					You've completed {goalProgress}% of your goal. Keep it up!
-				</p>
-			</section>
-
 			{/* Stats Grid */}
 			<section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 				{[
