@@ -13,19 +13,17 @@ import React from 'react'
 import StatCard from '~/components/StatCard'
 import ContinueLearningFallback from '~/components/fallbacks/ContinueLearningFallback'
 import RecommendedCourseFallback from '~/components/fallbacks/RecommendedCourseFallback'
-import { delay } from 'utils'
+// import { delay } from 'utils'
 
 export const handle = {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
 	const user = context.get(userContext)
+	if (user === null) throw new NoUserContextError('User context resolved to null.')
 
-	if (user === null) {
-		throw new NoUserContextError('User context resolved to null.')
-	}
-
-	let courses = delay(2000).then(() => getDashboardData(user.id))
+	// let courses = delay(2000).then(() => getDashboardData(user.id))
+	let courses = getDashboardData(user.id)
 
 	return { courses }
 }
