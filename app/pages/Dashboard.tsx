@@ -1,124 +1,83 @@
 import { BookOpen, Clock, Star, GraduationCap } from 'lucide-react'
-import { useLoaderData } from 'react-router'
+import { Await } from 'react-router'
 import { userContext } from '~/context'
 import type { Route } from './+types/Dashboard'
-import ContinueLearning from '~/components/ContinueLearning'
-import RecommendedCourses from '~/components/RecommendedCourses'
-import type { User } from '~/.server/database/schema'
+import ContinueLearningCard from '~/components/ContinueLearning'
+import RecommendedCourseCard from '~/components/RecommendedCourseCard'
 import { NoUserContextError } from '~/error'
 import {
 	getDashboardData,
 	type DashboardData,
 } from '~/.server/queries/dashboard'
-import { formatCourseLength } from '~/utils/format-course-length'
+import React from 'react'
+import StatCard from '~/components/StatCard'
+import ContinueLearningFallback from '~/components/fallbacks/ContinueLearningFallback'
+import RecommendedCourseFallback from '~/components/fallbacks/RecommendedCourseFallback'
+import { delay } from 'utils'
 
 export const handle = {
-	section: {
-		title: (match: { data?: unknown }) => {
-			const data = match.data as { user?: User } | undefined
-			return `Welcome back, ${data?.user?.name ?? 'there'}!`
-		},
-		subtitle: (match: { data?: unknown }) => {
-			const data =
-				match.data as { courses?: DashboardData[] } | undefined
-			const courses = data?.courses ?? []
-			const totalCourseSeconds = courses.reduce(
-				(acc, course) => acc + course.length,
-				0,
-			)
-			const learningSeconds = courses
-				.filter((course) => course.completed === true)
-				.reduce((acc, course) => acc + course.length, 0)
-			const goalProgress =
-				totalCourseSeconds === 0
-					? 0
-					: Math.round((learningSeconds / totalCourseSeconds) * 100)
-
-			return `You've completed ${goalProgress}% of your goal. Keep it up!`
-		},
-	},
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
 	const user = context.get(userContext)
+
 	if (user === null) {
 		throw new NoUserContextError('User context resolved to null.')
 	}
 
-	const courses = await getDashboardData(user.id)
+	let courses = delay(2000).then(() => getDashboardData(user.id))
 
-	return { user, courses }
+	return { courses }
 }
 
-export default function Dashboard() {
-	const { courses }: { user: User; courses: DashboardData[] } =
-		useLoaderData()
-	const continueCourse = courses[0]
-	const recommendedCourses = courses.slice(1)
-	const completedCourses = courses.filter((c) => c.completed === true)
-	const learningSeconds = completedCourses.reduce(
-		(acc, course) => acc + course.length,
-		0,
-	)
+export default function Dashboard({ loaderData }: Route.ComponentProps) {
+	let { courses } = loaderData
 
 	return (
 		<div className="space-y-10">
-			{/* Stats Grid */}
-			<section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-				{[
-					{
-						label: 'Courses in Progress',
-						value: courses.length,
-						icon: BookOpen,
-						color: 'text-blue-400',
-						bg: 'bg-blue-400/10',
-					},
-					{
-						label: 'Completed Courses',
-						value: completedCourses.length,
-						icon: GraduationCap,
-						color: 'text-emerald-400',
-						bg: 'bg-emerald-400/10',
-					},
-					{
-						label: 'Learning Hours',
-						value: formatCourseLength(learningSeconds),
-						icon: Clock,
-						color: 'text-amber-400',
-						bg: 'bg-amber-400/10',
-					},
-					{
-						label: 'Achievement Points',
-						value: '2,450',
-						icon: Star,
-						color: 'text-purple-400',
-						bg: 'bg-purple-400/10',
-					},
-				].map((stat, i) => (
-					<div
-						key={i}
-						className="bg-slate-900 border border-slate-800 p-6 rounded-xl"
-					>
-						<div
-							className={
-								stat.bg +
-								' w-10 h-10 rounded-lg flex items-center justify-center mb-4'
-							}
-						>
-							<stat.icon className={stat.color + ' w-5 h-5'} />
-						</div>
-						<p className="text-slate-400 text-sm font-medium">
-							{stat.label}
-						</p>
-						<p className="text-2xl font-bold text-white mt-1">
-							{stat.value}
-						</p>
-					</div>
-				))}
+			<section className="grid grid-cols-4 gap-4">
+				<StatCard label="Courses in Progress"
+					value={courses.then(cs => cs.filter(c => c.completed === false).length)}
+					icon={BookOpen} color="text-blue-400" bg="bg-blue-400/10" />
+
+				<StatCard label="Completed Courses"
+					value={courses.then(cs => cs.filter(c => c.completed === true).length)}
+					icon={GraduationCap} color="text-emerald-400" bg="bg-emerald-400/10" />
+
+				<StatCard label="Total learning hours"
+					value={courses.then(cs => cs.reduce((acc, c) => c.completed ? acc + c.length : acc, 0))}
+					icon={Clock} color="text-amber-400" bg="bg-amber-400/10" />
+
+				<StatCard label="Achievement Points"
+					value="2,450"
+					icon={Star} color="text-purple-400" bg="bg-purple-400/10" />
 			</section>
 
-			<ContinueLearning course={continueCourse} />
-			<RecommendedCourses courses={recommendedCourses} />
+			<section>
+				<h2 className="text-xl font-semibold text-white mb-6">
+					Continue Learning
+				</h2>
+				<React.Suspense fallback={<ContinueLearningFallback />}>
+					<Await resolve={courses}>
+						{(value) => <ContinueLearningCard course={value[0]} />}
+					</Await>
+				</React.Suspense>
+			</section>
+
+			<section>
+				<h2 className="text-xl font-semibold text-white mb-6">
+					Recommended for you
+				</h2>
+				<React.Suspense fallback={<RecommendedCourseFallback />}>
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						<Await resolve={courses}>
+							{(courses: DashboardData[]) => (courses.map((c) => (
+								<RecommendedCourseCard course={c} />
+							)))}
+						</Await>
+					</div>
+				</React.Suspense>
+			</section>
 		</div>
 	)
 }
