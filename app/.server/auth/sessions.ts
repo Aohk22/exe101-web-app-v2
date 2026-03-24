@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { createCookieSessionStorage } from 'react-router'
 
 type SessionData = {
@@ -24,7 +25,7 @@ const { getSession, commitSession, destroySession } =
 			maxAge: 60 * 60,
 			path: '/',
 			sameSite: 'lax',
-			secrets: ['s3cret1'],
+			secrets: [process.env.SESSION_SECRET!],
 			secure: true,
 		},
 	})
