@@ -18,6 +18,7 @@ export async function getCoursesData({
 	const res = await db.execute(sql`
 		SELECT 
 			c.id, c.title, c.description, c.instructor, c.thumbnail, c.length, 
+			c.category_id as "categoryId",
 			cat.name AS category,
 			COUNT(l.id) AS lessons_count
 		FROM courses c
