@@ -17,6 +17,7 @@ import { motion } from 'motion/react'
 import { Form, redirect } from 'react-router'
 import { destroySession, getSession } from '~/.server/auth/sessions'
 import type { Route } from './+types/Settings'
+import { userContext } from '~/context'
 
 export const handle = {
 	section: {
