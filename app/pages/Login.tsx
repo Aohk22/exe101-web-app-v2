@@ -153,10 +153,12 @@ export default function Login({ actionData }: Route.ComponentProps) {
 							className={`
 								w-full py-4 text-sm rounded-2xl font-semibold transition-all shadow-lg 
 								transition-all duration-200 flex items-center justify-center gap-2 
-								disabled:opacity-70 cursor-pointer ${error
-									? 'bg-red-600 hover:bg-red-700 shadow-red-900/20'
-									: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/20'
-								}`}
+								disabled:opacity-70 cursor-pointer 
+								${error
+									? 'bg-red-500 hover:bg-red-600 shadow-red-900/30'
+									: 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-900/30'
+								}
+							`}
 						>
 							{isLoading ? (
 								<>

@@ -1,4 +1,3 @@
-import React, { useState } from 'react'
 import {
 	GraduationCap,
 	Mail,
@@ -6,30 +5,21 @@ import {
 	User,
 	ArrowRight,
 	Loader2,
-	Github,
-	Chrome,
-	CheckCircle2,
 } from 'lucide-react'
+import {
+	GithubIcon,
+	ChromeIcon,
+} from '~/components/icons/icons'
 import { motion } from 'motion/react'
-import { data, Form, Link, redirect } from 'react-router'
-import type { Route } from './+types/Register'
-import { commitSession, getSession } from '~/.server/auth/sessions'
+import { Form, Link, redirect, useNavigation } from 'react-router'
+import { getSession } from '~/.server/auth/sessions'
 import { register } from '~/.server/auth/register'
+import type { Route } from './+types/Register'
+import z from 'zod'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const session = await getSession(request.headers.get('Cookie'))
-	if (session.has('userId')) {
-		return redirect('/')
-	}
-
-	return data(
-		{ error: session.get('error') },
-		{
-			headers: {
-				'Set-Cookie': await commitSession(session),
-			},
-		},
-	)
+	if (session.has('userId')) return redirect('/')
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -37,26 +27,41 @@ export async function action({ request }: Route.ActionArgs) {
 	const email = form.get('email')
 	const username = form.get('username')
 	const password = form.get('password')
+	const checkbox = form.get('checkbox')
 
-	console.log('Performing registration request.')
-
-	if (
-		typeof username != 'string' ||
-		typeof password != 'string' ||
-		typeof email != 'string'
-	) {
-		throw new Error('Invalid form data')
+	if (!checkbox) {
+		return { error: 'Must agree to terms of service' }
 	}
 
-	console.log('A user is trying to register.')
-	const status = await register(username, email, password)
-	if (status === 'good') {
+	const registerSchema = z.object({
+		email: z.string(),
+		username: z.string(),
+		password: z.string(),
+	})
+
+	const result = registerSchema.safeParse({ email, username, password })
+
+	if (!result.success) {
+		return { error: 'Error parsing registration form data.' }
+	}
+
+	const rowsChanged = await register(
+		result.data.username,
+		result.data.email,
+		result.data.password,
+	)
+
+	if (rowsChanged == 1) {
 		return redirect('/registration-success')
+	} else {
+		return { error: 'Error registering.' }
 	}
 }
 
-export default function Register() {
-	const [isLoading, setIsLoading] = useState(false)
+export default function Register({ actionData }: Route.ComponentProps) {
+	const error: string = actionData ? actionData.error : ''
+	const navigation = useNavigation()
+	const isLoading = navigation.state === 'submitting'
 
 	return (
 		<div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-slate-200">
@@ -90,11 +95,7 @@ export default function Register() {
 						</p>
 					</div>
 
-					<Form
-						method="POST"
-						onSubmit={() => setIsLoading(true)}
-						className="space-y-5"
-					>
+					<Form method="POST" className="space-y-5">
 						<div className="space-y-2">
 							<label className="text-sm font-bold text-slate-300 ml-1">
 								Full Name
@@ -149,6 +150,7 @@ export default function Register() {
 						<div className="flex items-start gap-2 ml-1">
 							<input
 								type="checkbox"
+								name="checkbox"
 								id="terms"
 								required
 								className="mt-1 w-4 h-4 rounded border-slate-700 bg-slate-800 text-emerald-600 focus:ring-emerald-500"
@@ -178,10 +180,20 @@ export default function Register() {
 						<button
 							type="submit"
 							disabled={isLoading}
-							className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+							className={`
+								w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold 
+								hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/20 
+								active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed
+								${error
+									? 'bg-red-500 hover:bg-red-600 shadow-red-900/30'
+									: 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-900/30'
+								}
+							`}
 						>
 							{isLoading ? (
 								<Loader2 className="w-5 h-5 animate-spin" />
+							) : error ? (
+								<p>{error}</p>
 							) : (
 								<>
 									Create Account{' '}
@@ -203,10 +215,10 @@ export default function Register() {
 
 						<div className="grid grid-cols-2 gap-4">
 							<button className="flex items-center justify-center gap-2 py-3 border border-slate-700 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-800 transition-colors">
-								<Chrome className="w-5 h-5" /> Google
+								<ChromeIcon className="w-5 h-5" /> Google
 							</button>
 							<button className="flex items-center justify-center gap-2 py-3 border border-slate-700 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-800 transition-colors">
-								<Github className="w-5 h-5" /> GitHub
+								<GithubIcon className="w-5 h-5" /> GitHub
 							</button>
 						</div>
 					</div>
