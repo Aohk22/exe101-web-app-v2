@@ -1,5 +1,5 @@
 import { BookOpen, Clock, Star, GraduationCap } from 'lucide-react'
-import { Await } from 'react-router'
+import { Await, redirect } from 'react-router'
 import { userContext } from '~/context'
 import type { Route } from './+types/Dashboard'
 import ContinueLearningCard from '~/components/ContinueLearning'
@@ -13,17 +13,24 @@ import React from 'react'
 import StatCard from '~/components/StatCard'
 import ContinueLearningFallback from '~/components/fallbacks/ContinueLearningFallback'
 import RecommendedCourseFallback from '~/components/fallbacks/RecommendedCourseFallback'
+import { getSession } from '~/.server/auth/sessions'
 // import { delay } from 'utils'
 
 export const handle = {
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
+	const session = await getSession(request.headers.get('Cookie'))
+	if (!session.has('userId')) redirect('/login')
+
 	const user = context.get(userContext)
 	if (user === null) throw new NoUserContextError('User context resolved to null.')
 
 	// let courses = delay(2000).then(() => getDashboardData(user.id))
-	let courses = getDashboardData(user.id)
+	const userId = parseInt(session.get('userId')!)
+	if (Number.isNaN(userId)) throw new Error(`Invalid user id ${userId}`)
+
+	let courses = getDashboardData(userId)
 
 	return { courses }
 }

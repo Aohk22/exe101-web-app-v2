@@ -43,7 +43,8 @@ export const courses = pgTable('courses', (t) => ({
 export const modules = pgTable('modules', (t) => ({
 	id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
 	title: t.varchar({ length: 255 }).notNull(),
-	courseId: t.integer('course_id').notNull(),
+
+	courseId: t.integer('course_id').notNull().references(() => courses.id),
 }))
 
 export const lessons = pgTable('lessons', (t) => ({
@@ -52,7 +53,7 @@ export const lessons = pgTable('lessons', (t) => ({
 	length: t.integer().notNull(),
 	contentMd: t.text('content_md').notNull().default(''),
 
-	moduleId: t.integer('module_id').notNull(),
+	moduleId: t.integer('module_id').notNull().references(() => modules.id),
 }))
 
 export const usersToCourses = pgTable(
