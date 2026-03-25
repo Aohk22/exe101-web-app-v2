@@ -8,30 +8,32 @@ import CoursePreviewCard from '~/components/CoursePreviewCard'
 import {
 	Play,
 	CheckCircle2,
-	Clock,
 	BookOpen,
 	User,
 	Star,
 	ChevronRight,
-	GraduationCap,
 } from 'lucide-react'
 import { userContext } from '~/context'
 import type { Route } from './+types/CourseDetail'
-import { NoUserContextError } from '~/error'
 import { getCourseDetailData } from '~/.server/queries/course-detail'
 import type { CourseDetails } from '~/.server/queries/course-detail'
 import { db } from '~/.server/database/connection'
 import { usersToCourses } from '~/.server/database/schema'
 import { formatLessonLength } from '~/utils/format-course-length'
+import { getSession } from '~/.server/auth/sessions'
 
-export async function loader({ context, params }: Route.LoaderArgs) {
-	const user = context.get(userContext)
-	if (user === null) throw new NoUserContextError('User resoved')
+export async function loader({ request, params }: Route.LoaderArgs) {
+	const session = await getSession(request.headers.get('Cookie'))
+	if (!session.has('userId')) return redirect('/login')
 
 	const courseId = parseInt(params.courseId)
-	if (isNaN(courseId)) throw new Error('Invalid path parameter')
+	if (Number.isNaN(courseId)) throw new Error('Invalid path parameter')
 
-	const data = await getCourseDetailData(courseId, user.id)
+	console.log(session.get('userId'))
+	const userId = parseInt(session.get('userId')!)
+	if (Number.isNaN(userId)) throw new Error(`Invalid userId ${userId}`)
+
+	const data = await getCourseDetailData(courseId, userId)
 	if (data == null) throw redirect('/courses')
 
 	return data
