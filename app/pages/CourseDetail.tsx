@@ -26,27 +26,19 @@ import { formatLessonLength } from '~/utils/format-course-length'
 
 export async function loader({ context, params }: Route.LoaderArgs) {
 	const user = context.get(userContext)
-	if (user === null) {
-		throw new NoUserContextError('User resoved')
-	}
+	if (user === null) throw new NoUserContextError('User resoved')
+
 	const courseId = parseInt(params.courseId)
-	if (isNaN(courseId)) {
-		throw new Error('Invalid path parameter')
-	}
+	if (isNaN(courseId)) throw new Error('Invalid path parameter')
 
 	const data = await getCourseDetailData(courseId, user.id)
-	if (data == null) {
-		throw redirect('/courses')
-	}
+	if (data == null) throw redirect('/courses')
 
 	return data
 }
 
 export async function action({ context, params, request }: Route.ActionArgs) {
 	const user = context.get(userContext)
-	if (user === null) {
-		throw new NoUserContextError('User resolved')
-	}
 
 	const courseId = parseInt(params.courseId)
 	if (isNaN(courseId)) {

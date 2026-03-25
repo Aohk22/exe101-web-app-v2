@@ -1,20 +1,20 @@
+import z from 'zod'
+import { motion } from 'motion/react'
 import {
 	GraduationCap,
 	Mail,
 	Lock,
 	ArrowRight,
 	Loader2,
-	Github,
-	Chrome,
-	XCircle,
 } from 'lucide-react'
-import { motion } from 'motion/react'
 import {
-	data,
+	ChromeIcon,
+	GithubIcon
+} from '~/components/icons/icons'
+import {
 	Form,
 	Link,
 	redirect,
-	useLoaderData,
 	useNavigation,
 } from 'react-router'
 import { getSession, commitSession } from '~/.server/auth/sessions'
@@ -22,54 +22,41 @@ import { validateCredentials } from '~/.server/auth/login'
 import type { Route } from './+types/Login'
 
 export async function loader({ request }: Route.LoaderArgs) {
-	console.log('Login loader activating.')
 	const session = await getSession(request.headers.get('Cookie'))
-	if (session.has('userId')) {
-		console.log('Redirecting to / from Login loader')
-		return redirect('/')
-	}
-
-	return data(
-		{ error: session.get('error') },
-		{
-			headers: {
-				'Set-Cookie': await commitSession(session),
-			},
-		},
-	)
+	if (session.has('userId')) return redirect('/')
 }
 
 export async function action({ request }: Route.ActionArgs) {
-	console.log('Login action activating.')
 	const session = await getSession(request.headers.get('Cookie'))
 	const form = await request.formData()
 	const username = form.get('email')
 	const password = form.get('password')
 
-	if (typeof username != 'string' || typeof password != 'string') {
-		throw new Error('Invalid form data')
+	const validateSchema = z.object({
+		username: z.email(),
+		password: z.string(),
+	})
+
+	const result = validateSchema.safeParse({ username, password })
+
+	if (!result.success) {
+		return { error: 'Error parsing login form data.' }
 	}
 
-	const userId = await validateCredentials(username, password)
-	if (userId == null) {
-		session.flash('error', 'Invalid username/password')
-		return redirect('login', {
-			headers: {
-				'Set-Cookie': await commitSession(session),
-			},
+	const userId = await validateCredentials(result.data.username, result.data.password)
+
+	if (!userId) {
+		return { error: 'User doesn\'t exist.' }
+	} else {
+		session.set('userId', String(userId))
+		return redirect('/', {
+			headers: { 'Set-Cookie': await commitSession(session) },
 		})
 	}
-
-	session.set('userId', String(userId))
-	return redirect('/', {
-		headers: {
-			'Set-Cookie': await commitSession(session),
-		},
-	})
 }
 
-export default function Login() {
-	const { error } = useLoaderData()
+export default function Login({ actionData }: Route.ComponentProps) {
+	const error: string = actionData ? actionData.error : ''
 	const navigation = useNavigation()
 	const isLoading = navigation.state === 'submitting'
 
@@ -163,14 +150,18 @@ export default function Login() {
 						<button
 							type="submit"
 							disabled={isLoading}
-							className={`w-full py-4 text-white rounded-2xl font-bold transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed ${
-								error
+							className={`
+								w-full py-4 text-sm rounded-2xl font-semibold transition-all shadow-lg 
+								transition-all duration-200 flex items-center justify-center gap-2 
+								disabled:opacity-70 cursor-pointer ${error
 									? 'bg-red-600 hover:bg-red-700 shadow-red-900/20'
 									: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/20'
-							}`}
+								}`}
 						>
 							{isLoading ? (
-								<Loader2 className="w-5 h-5 animate-spin" />
+								<>
+									Signing in <Loader2 className="w-5 h-5 animate-spin" />
+								</>
 							) : error ? (
 								<>
 									Try Again <ArrowRight className="w-5 h-5" />
@@ -195,10 +186,10 @@ export default function Login() {
 
 						<div className="grid grid-cols-2 gap-4">
 							<button className="flex items-center justify-center gap-2 py-3 border border-slate-700 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-800 transition-colors">
-								<Chrome className="w-5 h-5" /> Google
+								<ChromeIcon className="w-5 h-5" /> Google
 							</button>
 							<button className="flex items-center justify-center gap-2 py-3 border border-slate-700 rounded-xl text-sm font-bold text-slate-300 hover:bg-slate-800 transition-colors">
-								<Github className="w-5 h-5" /> GitHub
+								<GithubIcon className="w-5 h-5" /> GitHub
 							</button>
 						</div>
 					</div>

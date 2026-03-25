@@ -8,11 +8,8 @@ export const authMiddleware: Route.MiddlewareFunction = async ({
 	request,
 	context,
 }) => {
-	console.log('Auth middleware activating.')
 	const session = await getSession(request.headers.get('Cookie'))
-	// const session = await getSession();
 	const userId = session.get('userId')
-	console.log(`Got userId from session: ${userId}`)
 
 	if (!userId) {
 		throw redirect('/login')
@@ -21,7 +18,7 @@ export const authMiddleware: Route.MiddlewareFunction = async ({
 	const user = await getUserById(userId)
 
 	if (!user) {
-		throw redirect('/login', {
+		throw redirect('/register', {
 			headers: {
 				'Set-Cookie': await destroySession(session),
 			},
