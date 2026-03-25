@@ -15,6 +15,8 @@ const courseDetailsSchema = z.object({
 	courseThumbnail: z.string(),
 	courseLength: z.coerce.number(),
 
+	categoryId: z.coerce.number(),
+
 	moduleId: z.coerce.number(),
 	moduleTitle: z.string(),
 
@@ -43,13 +45,11 @@ export async function getCourseDetailData(
 	courseId: number,
 	userId: number,
 ): Promise<{ enrolled: boolean; course: CourseDetails } | null> {
-	const enrolled =
-		(
-			await db.execute(sql`
-		SELECT * FROM users_to_courses 
-		WHERE user_id = ${userId} AND course_id = ${courseId}
-	`)
-		).rows.length > 0
+	const enrolled = (
+		await db.execute(sql`
+			SELECT * FROM users_to_courses 
+			WHERE user_id = ${userId} AND course_id = ${courseId}
+		`)).rows.length > 0
 
 	const res = await db.execute(sql`
 		SELECT
@@ -60,6 +60,8 @@ export async function getCourseDetailData(
 			c.thumbnail AS "courseThumbnail",
 			c.length AS "courseLength",
 
+			cat.id AS "categoryId",
+
 			m.id AS "moduleId",
 			m.title AS "moduleTitle",
 
@@ -69,15 +71,13 @@ export async function getCourseDetailData(
 			l.content_md AS "lessonContentMd"
 			${enrolled ? sql`,utl.completed AS "lessonCompleted"` : sql``}
 		FROM courses c
+		INNER JOIN categories cat ON c.category_id = cat.id
 		INNER JOIN modules m ON c.id = m.course_id
-		INNER JOIN lessons l ON m.id = l.module_id
-		${
-			enrolled
-				? sql`
-				INNER JOIN users_to_lessons utl 
-				ON utl.lesson_id = l.id AND utl.user_id = ${userId}
-			`
-				: sql``
+		INNER JOIN lessons l ON m.id = l.module_id 
+		${enrolled ? sql`
+			INNER JOIN users_to_lessons utl 
+			ON utl.lesson_id = l.id AND utl.user_id = ${userId}
+			` : sql``
 		}
 		WHERE c.id = ${courseId}
 		ORDER BY m.id, l.id
@@ -92,6 +92,7 @@ export async function getCourseDetailData(
 	// Group flat rows into nested structure
 	const grouped = rows.reduce(
 		(acc, row) => {
+			// Accumulate the courses.
 			if (!acc[row.courseId]) {
 				acc[row.courseId] = {
 					id: row.courseId,
@@ -100,24 +101,30 @@ export async function getCourseDetailData(
 					instructor: row.courseInstructor,
 					thumbnail: row.courseThumbnail,
 					length: row.courseLength,
+					categoryId: row.categoryId,
 					modules: {},
 				}
 			}
 
+			// Accumulate the modules.
 			if (!acc[row.courseId].modules[row.moduleId]) {
 				acc[row.courseId].modules[row.moduleId] = {
 					id: row.moduleId,
 					title: row.moduleTitle,
+					courseId: row.courseId,
 					lessons: [],
 				}
 			}
 
+			// Accumulate the lessons
 			acc[row.courseId].modules[row.moduleId].lessons.push({
 				id: row.lessonId,
 				title: row.lessonTitle,
 				length: row.lessonLength,
 				contentMd: row.lessonContentMd,
-				completed: row.lessonCompleted,
+				moduleId: row.moduleId,
+
+				completed: row.lessonCompleted, // This the extra parameter.
 			})
 
 			return acc
@@ -125,7 +132,7 @@ export async function getCourseDetailData(
 		{} as Record<string, any>,
 	)
 
-	console.dir(grouped, { depth: null })
+	// console.dir(grouped, { depth: null })
 
 	// Flatten modules from object to array
 	const flatten = Object.values(grouped).map((c: any) => ({
