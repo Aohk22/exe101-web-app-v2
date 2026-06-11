@@ -1,4 +1,4 @@
-import type { Lesson, Module } from '~/.server/database/schema'
+import type { Lesson, Module } from '~/.server/database/types'
 import type { courses } from '~/.server/database/schema'
 
 export type BuilderCourse = typeof courses.$inferSelect & {

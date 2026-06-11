@@ -15,7 +15,7 @@ import {
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import PricingModal from '~/components/PricingModal'
-import type { User } from '~/.server/database/schema'
+import type { User } from '~/.server/database/types'
 import AiTutor from '~/components/AiTutor'
 
 const baseNavItems = [

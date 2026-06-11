@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '~/.server/database/connection'
-import { courseSchema } from '~/.server/database/schema'
+import { courseSchema } from '~/.server/database/types'
 
 export const coursesViewSchema = courseSchema.extend({
 	category: z.string(),

@@ -1,7 +1,7 @@
 import { FileText, FolderTree, Save, SlidersHorizontal } from 'lucide-react'
 import { Form, useNavigation } from 'react-router'
 import { useMemo, useState } from 'react'
-import type { Category } from '~/.server/database/schema'
+import type { Category } from '~/.server/database/types'
 import CourseDetailsForm from './CourseDetailsForm'
 import CurriculumPanel from './CurriculumPanel'
 import LessonEditorPanel from './LessonEditorPanel'

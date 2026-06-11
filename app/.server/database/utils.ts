@@ -4,14 +4,14 @@ import type {
 	Lesson,
 	Module,
 	User,
-} from '~/.server/database/schema'
+} from '~/.server/database/types'
 import {
 	categorySchema,
 	courseSchema,
 	lessonSchema,
 	moduleSchema,
 	userSchema,
-} from '~/.server/database/schema'
+} from '~/.server/database/types'
 import { db } from '~/.server/database/connection'
 import { eq, sql } from 'drizzle-orm'
 import { z } from 'zod'

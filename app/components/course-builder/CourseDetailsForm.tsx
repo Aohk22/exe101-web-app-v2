@@ -1,5 +1,5 @@
 import type { ChangeEvent } from 'react'
-import type { Category } from '~/.server/database/schema'
+import type { Category } from '~/.server/database/types'
 import type { CourseDraft } from './types'
 
 type CourseDetailsFormProps = {

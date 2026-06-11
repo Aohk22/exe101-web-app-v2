@@ -5,7 +5,7 @@ import {
 	courseSchema,
 	lessonSchema,
 	moduleSchema,
-} from '~/.server/database/schema'
+} from '~/.server/database/types'
 
 const courseDetailsSchema = z.object({
 	courseId: z.coerce.number(),

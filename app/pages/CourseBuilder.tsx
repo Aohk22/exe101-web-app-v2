@@ -19,9 +19,8 @@ import {
 	courses,
 	lessons,
 	modules,
-	type Category,
-	type User,
 } from '~/.server/database/schema'
+import type { Category, User } from '~/.server/database/types'
 import { getCategories } from '~/.server/database/utils'
 
 const lessonDraftSchema = z.object({
