@@ -32,7 +32,13 @@ export default function MainLayout() {
 	const [aiOpen, setAiOpen] = useState(false)
 	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 	const [sidebarWidth, setSidebarWidth] = useState(256)
-	const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+	const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+		if (typeof document !== 'undefined') {
+			const el = document.documentElement
+			return (el.dataset.theme as 'light' | 'dark') || 'dark'
+		}
+		return 'dark'
+	})
 	const resizeStateRef = useRef({
 		isResizing: false,
 		lastExpandedWidth: 256,
@@ -72,6 +78,8 @@ export default function MainLayout() {
 					: 'light'
 
 		setTheme(nextTheme)
+		document.documentElement.dataset.theme = nextTheme
+		document.documentElement.style.colorScheme = nextTheme
 	}, [])
 
 	useEffect(() => {

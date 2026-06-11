@@ -25,5 +25,5 @@ export const authMiddleware: Route.MiddlewareFunction = async ({
 		})
 	}
 
-	context.set(userContext, { name: user.name })
+	context.set(userContext, { name: user.name, role: user.role })
 }

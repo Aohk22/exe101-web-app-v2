@@ -1,13 +1,14 @@
-import { db } from '~/.server/database/connection'
+import { db } from '../app/.server/database/connection'
 import {
 	users,
+	categories,
 	courses,
 	modules,
 	lessons,
 	usersToCourses,
 	usersToLessons,
 	reviews,
-} from './schema'
+} from '../app/.server/database/schema'
 
 async function wipe() {
 	console.log('🗑️  Wiping database...')
@@ -20,6 +21,7 @@ async function wipe() {
 	await db.delete(modules)
 	await db.delete(courses)
 	await db.delete(users)
+	await db.delete(categories)
 
 	console.log('✅ Database wiped')
 }
