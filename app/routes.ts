@@ -20,11 +20,15 @@ export default [
 
 				route('courses', './pages/Courses.tsx'),
 
-				layout('./layouts/UnderConstructionLayout.tsx', [
-					route('achievements', './pages/Achievements.tsx'),
-				]),
+			route('paths', './pages/Paths.tsx'),
 
-				route('profile', './pages/Profile.tsx'),
+			route('paths/:pathId', './pages/PathDetail.tsx'),
+
+			layout('./layouts/UnderConstructionLayout.tsx', [
+				route('achievements', './pages/Achievements.tsx'),
+			]),
+
+			route('profile', './pages/Profile.tsx'),
 
 				route('settings', './pages/Settings.tsx'),
 

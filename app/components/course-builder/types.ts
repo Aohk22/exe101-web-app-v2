@@ -9,12 +9,29 @@ export type CurriculumModule = Module & {
 	lessons: Lesson[]
 }
 
+export type ChallengeOptionDraft = {
+	clientId: string
+	id: number | null
+	optionText: string
+	isCorrect: boolean
+}
+
+export type ChallengeQuestionDraft = {
+	clientId: string
+	id: number | null
+	questionText: string
+	type: 'multiple_choice' | 'flag'
+	correctAnswer: string
+	options: ChallengeOptionDraft[]
+}
+
 export type LessonDraft = {
 	clientId: string
 	id: number | null
 	title: string
 	length: number
 	contentMd: string
+	challengeQuestions: ChallengeQuestionDraft[]
 }
 
 export type ModuleDraft = {

@@ -1,5 +1,5 @@
 import { Link, redirect, useLoaderData } from 'react-router'
-import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2 } from 'lucide-react'
 import { userContext } from '~/context'
 import type { Route } from './+types/Lesson'
 import { NoUserContextError } from '~/error'
@@ -7,6 +7,15 @@ import { getLessonPageData } from '~/.server/queries/lesson'
 import type { LessonPageData } from '~/.server/queries/lesson'
 import { formatLessonLength } from '~/utils/format-course-length'
 import MarkdownContent from '~/components/MarkdownContent'
+import ChallengeSection from '~/components/ChallengeSection'
+import {
+	getChallengeData,
+	submitAnswer,
+	checkAndMarkIfAllCorrect,
+	markLessonComplete,
+} from '~/.server/queries/challenge'
+import type { ChallengeQuestionWithOptions } from '~/.server/queries/challenge'
+import { z } from 'zod'
 
 export async function loader({ context, params }: Route.LoaderArgs) {
 	const user = context.get(userContext)
@@ -16,21 +25,54 @@ export async function loader({ context, params }: Route.LoaderArgs) {
 
 	const courseId = parseInt(params.courseId)
 	const lessonId = parseInt(params.lessonId)
-	if (isNaN(courseId) || isNaN(lessonId)) {
+	const userId = user.id
+	if (isNaN(courseId) || isNaN(lessonId) || userId == null) {
 		throw new Error('Invalid path parameter')
 	}
 
-	const data = await getLessonPageData({
-		courseId,
-		lessonId,
-		userId: user.id,
-	})
+	const [lessonData, challengeQuestions] = await Promise.all([
+		getLessonPageData({ courseId, lessonId, userId }),
+		getChallengeData(lessonId, userId),
+	])
 
-	if (data == null) {
+	if (lessonData == null) {
 		throw redirect(`/courses/${courseId}`)
 	}
 
-	return data
+	return { ...lessonData, challengeQuestions }
+}
+
+export async function action({ context, params, request }: Route.ActionArgs) {
+	const user = context.get(userContext)
+	if (user === null) {
+		throw new NoUserContextError('User resolved')
+	}
+
+	const lessonId = parseInt(params.lessonId)
+	const userId = user.id
+	if (isNaN(lessonId) || userId == null) {
+		throw new Error('Invalid path parameter')
+	}
+
+	const form = await request.formData()
+	const intent = form.get('intent')
+
+	if (intent === 'submit-challenge') {
+		const questionId = z.coerce.number().parse(form.get('questionId'))
+		const answer = z.string().parse(form.get('answer'))
+
+		await submitAnswer(userId, questionId, answer)
+		await checkAndMarkIfAllCorrect(lessonId, userId)
+
+		return { ok: true }
+	}
+
+	if (intent === 'mark-complete') {
+		await markLessonComplete(lessonId, userId)
+		return { ok: true }
+	}
+
+	return { error: 'Unknown intent' }
 }
 
 export default function Lesson() {
@@ -47,7 +89,11 @@ export default function Lesson() {
 		completedLessonsCount,
 		totalLessonsCount,
 		progressPercent,
-	}: LessonPageData = data
+		challengeQuestions,
+	}: LessonPageData & { challengeQuestions: ChallengeQuestionWithOptions[] } =
+		data
+
+	const hasChallenges = challengeQuestions.length > 0
 
 	return (
 		<div className="flex flex-col text-slate-200">
@@ -115,6 +161,30 @@ export default function Lesson() {
 				</div>
 
 				<MarkdownContent content={currentLesson.contentMd} />
+
+				{hasChallenges ? (
+					<ChallengeSection
+						questions={challengeQuestions}
+						lessonId={currentLesson.id}
+					/>
+				) : (
+					<div className="mt-10 border-t border-slate-800 pt-8">
+						<form method="post">
+							<input
+								type="hidden"
+								name="intent"
+								value="mark-complete"
+							/>
+							<button
+								type="submit"
+								className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
+							>
+								<CheckCircle2 className="w-4 h-4" />
+								Mark as Complete
+							</button>
+						</form>
+					</div>
+				)}
 			</div>
 		</div>
 	)

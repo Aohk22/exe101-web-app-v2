@@ -8,6 +8,10 @@ import {
 	modules,
 	lessons,
 	usersToCourses,
+	learningPaths,
+	pathCourses,
+	challengeQuestions,
+	challengeOptions,
 } from '../app/.server/database/schema'
 
 const CATEGORIES = [
@@ -334,6 +338,25 @@ const USERS_TO_COURSES = [
 	{ userId: 3, courseId: 2 },
 ]
 
+const LEARNING_PATHS = [
+	{
+		title: 'Security Foundations',
+		description: 'Master the fundamentals of ethical hacking and network defense.',
+		thumbnail: 'https://picsum.photos/seed/security-foundations/600/400',
+	},
+	{
+		title: 'Cloud Practitioner',
+		description: 'Build a strong foundation in cloud security architecture.',
+		thumbnail: 'https://picsum.photos/seed/cloud-practitioner/600/400',
+	},
+]
+
+const PATH_COURSES = [
+	{ pathIndex: 0, courseId: 1, position: 0 },
+	{ pathIndex: 0, courseId: 2, position: 1 },
+	{ pathIndex: 1, courseId: 3, position: 0 },
+]
+
 async function seed() {
 	console.log('🌱 Seeding database...')
 
@@ -432,6 +455,92 @@ async function seed() {
 	)
 
 	console.log('✅ Inserted user-course enrollments (trigger auto-populated users_to_lessons)')
+
+	const insertedPaths = await db
+		.insert(learningPaths)
+		.values(LEARNING_PATHS)
+		.returning()
+
+	console.log(`✅ Inserted ${insertedPaths.length} learning paths`)
+
+	await db.insert(pathCourses).values(
+		PATH_COURSES.map((pc) => ({
+			pathId: insertedPaths[pc.pathIndex].id,
+			courseId: courseIdMap[pc.courseId],
+			position: pc.position,
+		})),
+	)
+
+	console.log('✅ Inserted path-course associations')
+
+	// Challenge questions — added to lesson 1 (What is Ethical Hacking?) and lesson 6 (Understanding Firewall Rules)
+	const CHALLENGE_QUESTIONS = [
+		{
+			lessonIndex: 0, // "What is Ethical Hacking?"
+			type: 'multiple_choice' as const,
+			questionText: 'What distinguishes an ethical hacker from a malicious attacker?',
+			correctAnswer: null,
+			orderIndex: 0,
+			options: [
+				{ optionText: 'Ethical hackers have better technical skills', isCorrect: false },
+				{ optionText: 'Ethical hackers have explicit authorization', isCorrect: true },
+				{ optionText: 'Ethical hackers use different tools', isCorrect: false },
+				{ optionText: 'Ethical hackers work faster', isCorrect: false },
+			],
+		},
+		{
+			lessonIndex: 0,
+			type: 'flag' as const,
+			questionText: 'What is the term for the practice of testing systems with authorization to find weaknesses?',
+			correctAnswer: 'ethical hacking',
+			orderIndex: 1,
+			options: [],
+		},
+		{
+			lessonIndex: 1, // "Setting Up Your Lab Environment"
+			type: 'flag' as const,
+			questionText: 'You are setting up your lab environment and find a sticky note on the monitor with the text "ZmxhZ3thbHc0eXNfZzR0aDNyXzFuZjBfd2gzbl9zM3R0MW5nX3VwfQ==". Decode this message to find the flag and enter it below.',
+			correctAnswer: 'flag{alw4ys_g4th3r_1nf0_wh3n_s3tt1ng_up}',
+			orderIndex: 0,
+			options: [],
+		},
+		{
+			lessonIndex: 5, // "Understanding Firewall Rules" (0-indexed after seed: lesson id 6 but index 5)
+			type: 'flag' as const,
+			questionText: 'What is the security principle that says traffic should be denied unless explicitly allowed?',
+			correctAnswer: 'default deny',
+			orderIndex: 0,
+			options: [],
+		},
+	]
+
+	for (const cq of CHALLENGE_QUESTIONS) {
+		const lessonId = insertedLessons[cq.lessonIndex].id
+
+		const [createdQuestion] = await db
+			.insert(challengeQuestions)
+			.values({
+				lessonId,
+				questionText: cq.questionText,
+				type: cq.type,
+				correctAnswer: cq.correctAnswer,
+				orderIndex: cq.orderIndex,
+			})
+			.returning({ id: challengeQuestions.id })
+
+		if (cq.options.length > 0) {
+			await db.insert(challengeOptions).values(
+				cq.options.map((opt, i) => ({
+					questionId: createdQuestion.id,
+					optionText: opt.optionText,
+					isCorrect: opt.isCorrect,
+					orderIndex: i,
+				})),
+			)
+		}
+	}
+
+	console.log('✅ Inserted challenge questions')
 
 	console.log('🎉 Seeding complete!')
 }

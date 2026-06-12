@@ -5,6 +5,8 @@ import {
 	varchar,
 	text,
 	boolean,
+	timestamp,
+	unique,
 } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
@@ -86,4 +88,66 @@ export const usersToLessons = pgTable(
 		completed: boolean().notNull().default(false),
 	},
 	(t) => [primaryKey({ columns: [t.userId, t.lessonId] })],
+)
+
+export const challengeQuestions = pgTable('challenge_questions', {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	lessonId: integer('lesson_id')
+		.notNull()
+		.references(() => lessons.id),
+	questionText: text('question_text').notNull(),
+	type: varchar({ length: 20 }).notNull().default('multiple_choice'),
+	correctAnswer: text('correct_answer'),
+	orderIndex: integer('order_index').notNull().default(0),
+})
+
+export const challengeOptions = pgTable('challenge_options', {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	questionId: integer('question_id')
+		.notNull()
+		.references(() => challengeQuestions.id, { onDelete: 'cascade' }),
+	optionText: text('option_text').notNull(),
+	isCorrect: boolean('is_correct').notNull().default(false),
+	orderIndex: integer('order_index').notNull().default(0),
+})
+
+export const challengeSubmissions = pgTable('challenge_submissions', {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id),
+	questionId: integer('question_id')
+		.notNull()
+		.references(() => challengeQuestions.id, { onDelete: 'cascade' }),
+	answerText: text('answer_text').notNull(),
+	isCorrect: boolean('is_correct').notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (t) => [
+	unique().on(t.userId, t.questionId),
+])
+
+export const learningPaths = pgTable('learning_paths', {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	title: varchar({ length: 255 }).notNull(),
+	description: text(),
+	thumbnail: text(),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const pathCourses = pgTable(
+	'path_courses',
+	{
+		id: integer().primaryKey().generatedAlwaysAsIdentity(),
+		pathId: integer('path_id')
+			.notNull()
+			.references(() => learningPaths.id, { onDelete: 'cascade' }),
+		courseId: integer('course_id')
+			.notNull()
+			.references(() => courses.id, { onDelete: 'cascade' }),
+		position: integer('position').notNull(),
+	},
+	(t) => [
+		unique().on(t.pathId, t.courseId),
+		unique().on(t.pathId, t.position),
+	],
 )

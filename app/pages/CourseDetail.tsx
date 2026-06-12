@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { userContext } from '~/context'
 import type { Route } from './+types/CourseDetail'
+import { NoUserContextError } from '~/error'
 import { getCourseDetailData } from '~/.server/queries/course-detail'
 import type { CourseDetails } from '~/.server/queries/course-detail'
 import { db } from '~/.server/database/connection'
@@ -41,16 +42,20 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
 export async function action({ context, params, request }: Route.ActionArgs) {
 	const user = context.get(userContext)
+	if (user === null) {
+		throw new NoUserContextError('User resolved')
+	}
 
 	const courseId = parseInt(params.courseId)
-	if (isNaN(courseId)) {
+	const userId = user.id
+	if (isNaN(courseId) || userId == null) {
 		throw new Error('Invalid path parameter')
 	}
 
 	await db
 		.insert(usersToCourses)
 		.values({
-			userId: user.id,
+			userId,
 			courseId,
 		})
 		.onConflictDoNothing()

@@ -8,12 +8,22 @@ import {
 	usersToCourses,
 	usersToLessons,
 	reviews,
+	challengeSubmissions,
+	challengeOptions,
+	challengeQuestions,
+	learningPaths,
+	pathCourses,
 } from '../app/.server/database/schema'
 
 async function wipe() {
 	console.log('🗑️  Wiping database...')
 
 	// Delete in dependency order (children before parents)
+	await db.delete(challengeSubmissions)
+	await db.delete(challengeOptions)
+	await db.delete(challengeQuestions)
+	await db.delete(pathCourses)
+	await db.delete(learningPaths)
 	await db.delete(usersToLessons)
 	await db.delete(usersToCourses)
 	await db.delete(reviews)

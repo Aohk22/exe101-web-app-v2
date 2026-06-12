@@ -11,6 +11,7 @@ import {
 	Moon,
 	SquarePen,
 	MessageCircle,
+	Map,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
@@ -21,6 +22,7 @@ import AiTutor from '~/components/AiTutor'
 const baseNavItems = [
 	{ label: 'Dashboard', href: '/', icon: LayoutDashboard },
 	{ label: 'My Courses', href: '/courses', icon: BookOpen },
+	{ label: 'Learning Paths', href: '/paths', icon: Map },
 	{ label: 'Achievements', href: '/achievements', icon: GraduationCap },
 	{ label: 'Settings', href: '/settings', icon: Settings },
 ]

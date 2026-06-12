@@ -7,6 +7,7 @@ import CurriculumPanel from './CurriculumPanel'
 import LessonEditorPanel from './LessonEditorPanel'
 import type {
 	BuilderCourse,
+	ChallengeQuestionDraft,
 	CourseDraft,
 	CurriculumModule,
 	LessonDraft,
@@ -32,6 +33,7 @@ function toLessonDraft(lesson: CurriculumModule['lessons'][number]): LessonDraft
 		title: lesson.title,
 		length: lesson.length,
 		contentMd: lesson.contentMd,
+		challengeQuestions: (lesson as any).challengeQuestions ?? [],
 	}
 }
 
@@ -187,6 +189,7 @@ export default function CourseBuilderWorkspace({
 									title: '',
 									length: 0,
 									contentMd: '',
+									challengeQuestions: [],
 								},
 							],
 						}
@@ -237,6 +240,28 @@ export default function CourseBuilderWorkspace({
 											...lesson,
 											length: Number.isFinite(value) ? value : 0,
 										}
+									: lesson,
+							),
+						}
+					: module,
+			),
+		}))
+	}
+
+	function handleChallengeQuestionChange(
+		moduleClientId: string,
+		lessonClientId: string,
+		questions: ChallengeQuestionDraft[],
+	) {
+		updateDraft((current) => ({
+			...current,
+			modules: current.modules.map((module) =>
+				module.clientId === moduleClientId
+					? {
+							...module,
+							lessons: module.lessons.map((lesson) =>
+								lesson.clientId === lessonClientId
+									? { ...lesson, challengeQuestions: questions }
 									: lesson,
 							),
 						}
@@ -418,6 +443,7 @@ export default function CourseBuilderWorkspace({
 							onSelectModule={handleMoveSelectedLesson}
 							onLessonFieldChange={handleLessonFieldChange}
 							onLessonLengthChange={handleLessonLengthChange}
+							onChallengeQuestionChange={handleChallengeQuestionChange}
 						/>
 					) : null}
 				</div>

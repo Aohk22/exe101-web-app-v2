@@ -19,9 +19,27 @@ import {
 	courses,
 	lessons,
 	modules,
+	challengeQuestions,
+	challengeOptions,
 } from '~/.server/database/schema'
 import type { Category, User } from '~/.server/database/types'
 import { getCategories } from '~/.server/database/utils'
+
+const challengeOptionDraftSchema = z.object({
+	clientId: z.string().min(1),
+	id: z.number().int().positive().nullable(),
+	optionText: z.string(),
+	isCorrect: z.boolean(),
+})
+
+const challengeQuestionDraftSchema = z.object({
+	clientId: z.string().min(1),
+	id: z.number().int().positive().nullable(),
+	questionText: z.string(),
+	type: z.enum(['multiple_choice', 'flag']),
+	correctAnswer: z.string(),
+	options: z.array(challengeOptionDraftSchema),
+})
 
 const lessonDraftSchema = z.object({
 	clientId: z.string().min(1),
@@ -29,6 +47,7 @@ const lessonDraftSchema = z.object({
 	title: z.string(),
 	length: z.number().int().min(0),
 	contentMd: z.string(),
+	challengeQuestions: z.array(challengeQuestionDraftSchema),
 })
 
 const moduleDraftSchema = z.object({
@@ -390,6 +409,35 @@ export async function action({ request, context }: Route.ActionArgs) {
 			}
 
 			lessonIdByClientId.set(lessonDraft.clientId, lessonId)
+
+			// Save challenge questions
+			await db
+				.delete(challengeQuestions)
+				.where(eq(challengeQuestions.lessonId, lessonId))
+
+			for (const qDraft of lessonDraft.challengeQuestions) {
+				const [createdQuestion] = await db
+					.insert(challengeQuestions)
+					.values({
+						lessonId,
+						questionText: qDraft.questionText,
+						type: qDraft.type,
+						correctAnswer: qDraft.type === 'flag' ? qDraft.correctAnswer : null,
+						orderIndex: 0,
+					})
+					.returning({ id: challengeQuestions.id })
+
+				if (qDraft.type === 'multiple_choice') {
+					await db.insert(challengeOptions).values(
+						qDraft.options.map((o) => ({
+							questionId: createdQuestion.id,
+							optionText: o.optionText,
+							isCorrect: o.isCorrect,
+							orderIndex: 0,
+						})),
+					)
+				}
+			}
 		}
 	}
 

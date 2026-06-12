@@ -56,4 +56,15 @@ INSERT INTO users_to_courses (user_id, course_id) VALUES
 -- Note: users_to_lessons is populated automatically by the trigger function
 -- based on course enrollments
 
+-- Learning Paths
+INSERT INTO learning_paths (title, description, thumbnail) VALUES
+('Security Foundations', 'Master the fundamentals of ethical hacking and network defense.', 'https://picsum.photos/seed/security-foundations/600/400'),
+('Cloud Practitioner', 'Build a strong foundation in cloud security architecture.', 'https://picsum.photos/seed/cloud-practitioner/600/400');
+
+-- Path-Course Associations
+INSERT INTO path_courses (path_id, course_id, "position") VALUES
+(1, 1, 0),
+(1, 2, 1),
+(2, 3, 0);
+
 -- Seed script completed successfully!

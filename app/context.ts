@@ -1,7 +1,7 @@
 import { createContext } from 'react-router'
 
 export type UserContext = {
-	id?: number,
+	id: number,
 	name: string,
 	role: string,
 }
