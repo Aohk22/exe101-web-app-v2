@@ -34,6 +34,8 @@ export default [
 
 				route('courses/:courseId/lessons/:lessonId', './pages/Lesson.tsx'),
 
+				route('admin', './pages/AdminDashboard.tsx'),
+
 				route('course-builder', './pages/CourseBuilder.tsx'),
 
 			]),

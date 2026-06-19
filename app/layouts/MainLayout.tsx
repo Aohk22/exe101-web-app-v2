@@ -12,6 +12,7 @@ import {
 	SquarePen,
 	MessageCircle,
 	Map,
+	ShieldCheck,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
@@ -66,6 +67,11 @@ export default function MainLayout() {
 					label: 'Course Builder',
 					href: '/course-builder',
 					icon: SquarePen,
+				},
+				{
+					label: 'Admin',
+					href: '/admin',
+					icon: ShieldCheck,
 				},
 			]
 			: baseNavItems
