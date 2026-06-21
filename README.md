@@ -32,11 +32,11 @@ cp example.env .env
 
 Required environment variables (see `example.env`):
 
-| Variable | Required | Description |
-|---|---|---|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `SESSION_SECRET` | Yes | Random string for session cookie signing |
-| `OPENROUTER_API_KEY` | No | API key for the AI tutor feature |
+| Variable             | Required | Description                              |
+| -------------------- | -------- | ---------------------------------------- |
+| `DATABASE_URL`       | Yes      | PostgreSQL connection string             |
+| `SESSION_SECRET`     | Yes      | Random string for session cookie signing |
+| `OPENROUTER_API_KEY` | No       | API key for the AI tutor feature         |
 
 ```sh
 # 4. Push the database schema and seed data
@@ -83,16 +83,16 @@ app/
 
 ### Available scripts
 
-| Command | Description |
-|---|---|
-| `pnpm run dev` | Start dev server at `localhost:5173` |
-| `pnpm run build` | Production build to `build/client/` and `build/server/` |
-| `pnpm run start` | Serve production build |
-| `pnpm run typecheck` | `react-router typegen && tsc` |
-| `pnpm run fmt` | Format code with Prettier |
-| `pnpm run db:push` | Push Drizzle schema to PostgreSQL |
-| `pnpm run db:seed` | Seed database with sample data |
-| `pnpm run db:wipe` | Delete all database data |
+| Command              | Description                                             |
+| -------------------- | ------------------------------------------------------- |
+| `pnpm run dev`       | Start dev server at `localhost:5173`                    |
+| `pnpm run build`     | Production build to `build/client/` and `build/server/` |
+| `pnpm run start`     | Serve production build                                  |
+| `pnpm run typecheck` | `react-router typegen && tsc`                           |
+| `pnpm run fmt`       | Format code with Prettier                               |
+| `pnpm run db:push`   | Push Drizzle schema to PostgreSQL                       |
+| `pnpm run db:seed`   | Seed database with sample data                          |
+| `pnpm run db:wipe`   | Delete all database data                                |
 
 ### Making changes
 

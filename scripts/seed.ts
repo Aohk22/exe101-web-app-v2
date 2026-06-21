@@ -24,7 +24,8 @@ const USERS = [
 		id: 1,
 		name: 'Alice Johnson',
 		email: 'alice@example.com',
-		password: '$2b$10$L0JZezH14E1wHCrJykgFJey03QU2P1ysVfpIRWIbv5gm3Iar7/EL.',
+		password:
+			'$2b$10$L0JZezH14E1wHCrJykgFJey03QU2P1ysVfpIRWIbv5gm3Iar7/EL.',
 		role: 'learner' as const,
 	},
 	{
@@ -45,7 +46,8 @@ const USERS = [
 		id: 4,
 		name: 'Staff Admin',
 		email: 'staff@example.com',
-		password: '$2b$10$L0JZezH14E1wHCrJykgFJey03QU2P1ysVfpIRWIbv5gm3Iar7/EL.',
+		password:
+			'$2b$10$L0JZezH14E1wHCrJykgFJey03QU2P1ysVfpIRWIbv5gm3Iar7/EL.',
 		role: 'staff' as const,
 	},
 ]
@@ -54,7 +56,8 @@ const COURSES = [
 	{
 		id: 1,
 		title: 'Ethical Hacking Fundamentals',
-		description: 'Learn the core concepts of ethical hacking and penetration testing.',
+		description:
+			'Learn the core concepts of ethical hacking and penetration testing.',
 		instructor: 'John Doe',
 		thumbnail: 'https://picsum.photos/seed/ethical-hacking/600/400',
 		categoryId: 1,
@@ -63,7 +66,8 @@ const COURSES = [
 	{
 		id: 2,
 		title: 'Network Defense & Hardening',
-		description: 'Master firewall configuration and network hardening techniques.',
+		description:
+			'Master firewall configuration and network hardening techniques.',
 		instructor: 'Jane Smith',
 		thumbnail: 'https://picsum.photos/seed/network-defense/600/400',
 		categoryId: 1,
@@ -72,7 +76,8 @@ const COURSES = [
 	{
 		id: 3,
 		title: 'Cloud Security Architecture',
-		description: 'Secure cloud infrastructure across AWS and Azure environments.',
+		description:
+			'Secure cloud infrastructure across AWS and Azure environments.',
 		instructor: 'Carlos Rivera',
 		thumbnail: 'https://picsum.photos/seed/cloud-security/600/400',
 		categoryId: 2,
@@ -341,12 +346,14 @@ const USERS_TO_COURSES = [
 const LEARNING_PATHS = [
 	{
 		title: 'Security Foundations',
-		description: 'Master the fundamentals of ethical hacking and network defense.',
+		description:
+			'Master the fundamentals of ethical hacking and network defense.',
 		thumbnail: 'https://picsum.photos/seed/security-foundations/600/400',
 	},
 	{
 		title: 'Cloud Practitioner',
-		description: 'Build a strong foundation in cloud security architecture.',
+		description:
+			'Build a strong foundation in cloud security architecture.',
 		thumbnail: 'https://picsum.photos/seed/cloud-practitioner/600/400',
 	},
 ]
@@ -454,7 +461,9 @@ async function seed() {
 		})),
 	)
 
-	console.log('✅ Inserted user-course enrollments (trigger auto-populated users_to_lessons)')
+	console.log(
+		'✅ Inserted user-course enrollments (trigger auto-populated users_to_lessons)',
+	)
 
 	const insertedPaths = await db
 		.insert(learningPaths)
@@ -478,20 +487,31 @@ async function seed() {
 		{
 			lessonIndex: 0, // "What is Ethical Hacking?"
 			type: 'multiple_choice' as const,
-			questionText: 'What distinguishes an ethical hacker from a malicious attacker?',
+			questionText:
+				'What distinguishes an ethical hacker from a malicious attacker?',
 			correctAnswer: null,
 			orderIndex: 0,
 			options: [
-				{ optionText: 'Ethical hackers have better technical skills', isCorrect: false },
-				{ optionText: 'Ethical hackers have explicit authorization', isCorrect: true },
-				{ optionText: 'Ethical hackers use different tools', isCorrect: false },
+				{
+					optionText: 'Ethical hackers have better technical skills',
+					isCorrect: false,
+				},
+				{
+					optionText: 'Ethical hackers have explicit authorization',
+					isCorrect: true,
+				},
+				{
+					optionText: 'Ethical hackers use different tools',
+					isCorrect: false,
+				},
 				{ optionText: 'Ethical hackers work faster', isCorrect: false },
 			],
 		},
 		{
 			lessonIndex: 0,
 			type: 'flag' as const,
-			questionText: 'What is the term for the practice of testing systems with authorization to find weaknesses?',
+			questionText:
+				'What is the term for the practice of testing systems with authorization to find weaknesses?',
 			correctAnswer: 'ethical hacking',
 			orderIndex: 1,
 			options: [],
@@ -499,7 +519,8 @@ async function seed() {
 		{
 			lessonIndex: 1, // "Setting Up Your Lab Environment"
 			type: 'flag' as const,
-			questionText: 'You are setting up your lab environment and find a sticky note on the monitor with the text "ZmxhZ3thbHc0eXNfZzR0aDNyXzFuZjBfd2gzbl9zM3R0MW5nX3VwfQ==". Decode this message to find the flag and enter it below.',
+			questionText:
+				'You are setting up your lab environment and find a sticky note on the monitor with the text "ZmxhZ3thbHc0eXNfZzR0aDNyXzFuZjBfd2gzbl9zM3R0MW5nX3VwfQ==". Decode this message to find the flag and enter it below.',
 			correctAnswer: 'flag{alw4ys_g4th3r_1nf0_wh3n_s3tt1ng_up}',
 			orderIndex: 0,
 			options: [],
@@ -507,7 +528,8 @@ async function seed() {
 		{
 			lessonIndex: 5, // "Understanding Firewall Rules" (0-indexed after seed: lesson id 6 but index 5)
 			type: 'flag' as const,
-			questionText: 'What is the security principle that says traffic should be denied unless explicitly allowed?',
+			questionText:
+				'What is the security principle that says traffic should be denied unless explicitly allowed?',
 			correctAnswer: 'default deny',
 			orderIndex: 0,
 			options: [],

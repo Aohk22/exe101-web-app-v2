@@ -1,6 +1,7 @@
-import { redirect, useLoaderData } from 'react-router'
+import { Await, redirect, useLoaderData } from 'react-router'
 import { Map, Clock, BookOpen, ChevronRight, Play } from 'lucide-react'
 import { Link } from 'react-router'
+import { Suspense } from 'react'
 import type { Route } from './+types/PathDetail'
 import { getLearningPathDetail } from '~/.server/queries/learning-paths'
 import type { LearningPathDetail } from '~/.server/database/types'
@@ -14,14 +15,41 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	const pathId = parseInt(params.pathId)
 	if (Number.isNaN(pathId)) throw new Error('Invalid path parameter')
 
-	const data = await getLearningPathDetail(pathId, userId)
-	if (data == null) throw redirect('/paths')
-
-	return data
+	return { dataPromise: getLearningPathDetail(pathId, userId) }
 }
 
 export default function PathDetail() {
-	const path: LearningPathDetail = useLoaderData()
+	const { dataPromise } = useLoaderData<typeof loader>()
+
+	return (
+		<div className="space-y-8">
+			<Suspense fallback={<PathDetailSkeleton />}>
+				<Await resolve={dataPromise}>
+					{(data) => {
+						if (data == null) {
+							return (
+								<div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/50 px-6 py-12 text-center">
+									<h2 className="text-lg font-bold text-white">
+										Path not found
+									</h2>
+									<Link
+										to="/paths"
+										className="mt-2 inline-block text-sm text-emerald-400 hover:text-emerald-300"
+									>
+										Back to learning paths
+									</Link>
+								</div>
+							)
+						}
+						return <PathDetailInner path={data} />
+					}}
+				</Await>
+			</Suspense>
+		</div>
+	)
+}
+
+function PathDetailInner({ path }: { path: LearningPathDetail }) {
 	const firstUnenrolled = path.courses.find((c) => !c.enrolled)
 	const allEnrolled = path.courses.every((c) => c.enrolled)
 	const firstCourse = path.courses[0]
@@ -150,6 +178,34 @@ export default function PathDetail() {
 						</Link>
 					))}
 				</div>
+			</div>
+		</div>
+	)
+}
+
+function PathDetailSkeleton() {
+	return (
+		<div className="space-y-8 animate-pulse">
+			<div className="space-y-4">
+				<div className="h-4 w-28 bg-slate-800 rounded" />
+				<div className="flex gap-6">
+					<div className="flex-1 space-y-3">
+						<div className="h-10 w-3/4 bg-slate-800 rounded" />
+						<div className="h-5 w-full bg-slate-800 rounded" />
+						<div className="flex gap-4">
+							<div className="h-4 w-20 bg-slate-800 rounded" />
+							<div className="h-4 w-24 bg-slate-800 rounded" />
+						</div>
+					</div>
+					<div className="w-72 aspect-video bg-slate-800 rounded-xl shrink-0 hidden md:block" />
+				</div>
+				<div className="h-11 w-36 bg-slate-800 rounded-xl" />
+			</div>
+			<div className="space-y-3">
+				<div className="h-7 w-24 bg-slate-800 rounded" />
+				{[1, 2, 3].map((i) => (
+					<div key={i} className="h-20 bg-slate-800 rounded-xl" />
+				))}
 			</div>
 		</div>
 	)

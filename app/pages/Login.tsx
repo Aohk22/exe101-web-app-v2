@@ -35,6 +35,7 @@ export async function action({ request }: Route.ActionArgs) {
 	const validateSchema = z.object({
 		username: z.email(),
 		password: z.string(),
+		remember: z.string().optional(),
 	})
 
 	const result = validateSchema.safeParse({ username, password })
@@ -43,14 +44,21 @@ export async function action({ request }: Route.ActionArgs) {
 		return { error: 'Error parsing login form data.' }
 	}
 
-	const userId = await validateCredentials(result.data.username, result.data.password)
+	const user = await validateCredentials(result.data.username, result.data.password)
 
-	if (!userId) {
+	if (!user) {
 		return { error: 'User doesn\'t exist.' }
 	} else {
-		session.set('userId', String(userId))
+		const rememberMe = result.data.remember === 'on'
+		session.set('userId', String(user.id))
+		session.set('userName', user.name)
+		session.set('userRole', user.role)
+		const cookie = await commitSession(
+			session,
+			rememberMe ? { maxAge: 60 * 60 * 24 * 30 } : undefined,
+		)
 		return redirect('/', {
-			headers: { 'Set-Cookie': await commitSession(session) },
+			headers: { 'Set-Cookie': cookie },
 		})
 	}
 }
@@ -136,6 +144,7 @@ export default function Login({ actionData }: Route.ComponentProps) {
 						<div className="flex items-center gap-2 ml-1">
 							<input
 								type="checkbox"
+								name="remember"
 								id="remember"
 								className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-emerald-600 focus:ring-emerald-500"
 							/>

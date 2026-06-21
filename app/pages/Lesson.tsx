@@ -1,5 +1,6 @@
-import { Link, redirect, useLoaderData } from 'react-router'
-import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2 } from 'lucide-react'
+import { Await, Link, redirect, useLoaderData } from 'react-router'
+import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
+import { Suspense } from 'react'
 import { userContext } from '~/context'
 import type { Route } from './+types/Lesson'
 import { NoUserContextError } from '~/error'
@@ -30,16 +31,10 @@ export async function loader({ context, params }: Route.LoaderArgs) {
 		throw new Error('Invalid path parameter')
 	}
 
-	const [lessonData, challengeQuestions] = await Promise.all([
-		getLessonPageData({ courseId, lessonId, userId }),
-		getChallengeData(lessonId, userId),
-	])
-
-	if (lessonData == null) {
-		throw redirect(`/courses/${courseId}`)
+	return {
+		dataPromise: getLessonPageData({ courseId, lessonId, userId }),
+		challengeQuestionsPromise: getChallengeData(lessonId, userId),
 	}
-
-	return { ...lessonData, challengeQuestions }
 }
 
 export async function action({ context, params, request }: Route.ActionArgs) {
@@ -76,11 +71,40 @@ export async function action({ context, params, request }: Route.ActionArgs) {
 }
 
 export default function Lesson() {
-	const data = useLoaderData<typeof loader>()
-	if (data == null) {
-		return null
-	}
+	const { dataPromise, challengeQuestionsPromise } = useLoaderData<typeof loader>()
 
+	return (
+		<Suspense fallback={<LessonSkeleton />}>
+			<Await resolve={dataPromise}>
+				{(lessonData) => {
+					if (lessonData == null) {
+						return (
+							<div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/50 px-6 py-12 text-center">
+								<h2 className="text-lg font-bold text-white">
+									Lesson not found
+								</h2>
+							</div>
+						)
+					}
+					return (
+						<LessonContent
+							lessonData={lessonData}
+							challengeQuestionsPromise={challengeQuestionsPromise as Promise<ChallengeQuestionWithOptions[]>}
+						/>
+					)
+				}}
+			</Await>
+		</Suspense>
+	)
+}
+
+function LessonContent({
+	lessonData,
+	challengeQuestionsPromise,
+}: {
+	lessonData: LessonPageData
+	challengeQuestionsPromise: Promise<ChallengeQuestionWithOptions[]>
+}) {
 	const {
 		course,
 		currentLesson,
@@ -89,11 +113,7 @@ export default function Lesson() {
 		completedLessonsCount,
 		totalLessonsCount,
 		progressPercent,
-		challengeQuestions,
-	}: LessonPageData & { challengeQuestions: ChallengeQuestionWithOptions[] } =
-		data
-
-	const hasChallenges = challengeQuestions.length > 0
+	} = lessonData
 
 	return (
 		<div className="flex flex-col text-slate-200">
@@ -162,29 +182,66 @@ export default function Lesson() {
 
 				<MarkdownContent content={currentLesson.contentMd} />
 
-				{hasChallenges ? (
-					<ChallengeSection
-						questions={challengeQuestions}
-						lessonId={currentLesson.id}
-					/>
-				) : (
+				<Suspense fallback={
 					<div className="mt-10 border-t border-slate-800 pt-8">
-						<form method="post">
-							<input
-								type="hidden"
-								name="intent"
-								value="mark-complete"
-							/>
-							<button
-								type="submit"
-								className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
-							>
-								<CheckCircle2 className="w-4 h-4" />
-								Mark as Complete
-							</button>
-						</form>
+						<div className="h-11 w-40 bg-slate-800 rounded-xl animate-pulse" />
 					</div>
-				)}
+				}>
+					<Await resolve={challengeQuestionsPromise}>
+						{(challengeQuestions) => {
+							const hasChallenges = challengeQuestions.length > 0
+							return hasChallenges ? (
+								<ChallengeSection
+									questions={challengeQuestions}
+									lessonId={currentLesson.id}
+								/>
+							) : (
+								<div className="mt-10 border-t border-slate-800 pt-8">
+									<form method="post">
+										<input
+											type="hidden"
+											name="intent"
+											value="mark-complete"
+										/>
+										<button
+											type="submit"
+											className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
+										>
+											<CheckCircle2 className="w-4 h-4" />
+											Mark as Complete
+										</button>
+									</form>
+								</div>
+							)
+						}}
+					</Await>
+				</Suspense>
+			</div>
+		</div>
+	)
+}
+
+function LessonSkeleton() {
+	return (
+		<div className="flex flex-col animate-pulse">
+			<div className="flex items-center justify-between mb-6">
+				<div className="flex items-center gap-4">
+					<div className="w-10 h-10 bg-slate-800 rounded-full" />
+					<div className="space-y-2">
+						<div className="h-5 w-64 bg-slate-800 rounded" />
+						<div className="h-4 w-32 bg-slate-800 rounded" />
+					</div>
+				</div>
+				<div className="flex gap-2">
+					<div className="h-10 w-24 bg-slate-800 rounded-xl" />
+					<div className="h-10 w-28 bg-slate-800 rounded-xl" />
+				</div>
+			</div>
+			<div className="space-y-4">
+				<div className="h-4 w-32 bg-slate-800 rounded" />
+				<div className="h-8 w-3/4 bg-slate-800 rounded" />
+				<div className="h-4 w-48 bg-slate-800 rounded" />
+				<div className="h-96 bg-slate-800 rounded-xl" />
 			</div>
 		</div>
 	)

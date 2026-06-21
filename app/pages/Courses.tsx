@@ -1,6 +1,6 @@
 import { Search, Clock, BookOpen, ChevronRight } from 'lucide-react'
 import { Link, useLoaderData, useSearchParams } from 'react-router'
-import { useDeferredValue, useState } from 'react'
+import { use, useDeferredValue, useState, Suspense } from 'react'
 import type { Route } from './+types/Courses'
 import type { Category } from '~/.server/database/types'
 import { getCategories } from '~/.server/database/utils'
@@ -17,17 +17,48 @@ export const handle = {
 export async function loader({ request }: Route.LoaderArgs) {
 	const url = new URL(request.url)
 	const category = url.searchParams.get('cat')
-	const categories = await getCategories()
-	const courses = await getCoursesData({ category })
 
-	return { categories, courses }
+	return {
+		categories: getCategories(),
+		courses: getCoursesData({ category }),
+	}
 }
 
 export default function Courses() {
-	const {
-		categories,
-		courses,
-	}: { categories: Category[]; courses: CoursesView[] } = useLoaderData()
+	const { categories, courses } = useLoaderData<typeof loader>()
+
+	return (
+		<div className="space-y-8">
+			<Suspense fallback={<CoursesSkeleton />}>
+				<CoursesContent
+					categoriesPromise={categories}
+					coursesPromise={courses}
+				/>
+			</Suspense>
+		</div>
+	)
+}
+
+function CoursesContent({
+	categoriesPromise,
+	coursesPromise,
+}: {
+	categoriesPromise: Promise<Category[]>
+	coursesPromise: Promise<CoursesView[]>
+}) {
+	const categories = use(categoriesPromise)
+	const courses = use(coursesPromise)
+
+	return <CoursesInner categories={categories} courses={courses} />
+}
+
+function CoursesInner({
+	categories,
+	courses,
+}: {
+	categories: Category[]
+	courses: CoursesView[]
+}) {
 	const [searchParams] = useSearchParams()
 	const activeCategory = searchParams.get('cat') ?? 'all'
 	const [searchQuery, setSearchQuery] = useState('')
@@ -175,6 +206,47 @@ export default function Courses() {
 					</p>
 				</div>
 			)}
+		</div>
+	)
+}
+
+function CoursesSkeleton() {
+	return (
+		<div className="space-y-8">
+			<div className="flex justify-end">
+				<div className="h-10 w-64 bg-slate-800 rounded-xl animate-pulse" />
+			</div>
+			<div className="flex items-center gap-2 pb-2">
+				{[1, 2, 3, 4].map((i) => (
+					<div
+						key={i}
+						className="h-9 w-28 bg-slate-800 rounded-full animate-pulse"
+					/>
+				))}
+			</div>
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+				{[1, 2, 3, 4, 5, 6].map((i) => (
+					<div
+						key={i}
+						className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden animate-pulse"
+					>
+						<div className="aspect-[16/10] bg-slate-800" />
+						<div className="p-6 space-y-3">
+							<div className="flex gap-2">
+								<div className="h-3 w-16 bg-slate-800 rounded" />
+								<div className="h-3 w-20 bg-slate-800 rounded" />
+							</div>
+							<div className="h-5 w-3/4 bg-slate-800 rounded" />
+							<div className="h-4 w-full bg-slate-800 rounded" />
+							<div className="h-4 w-2/3 bg-slate-800 rounded" />
+							<div className="pt-4 border-t border-slate-800 flex justify-between">
+								<div className="h-4 w-24 bg-slate-800 rounded" />
+								<div className="h-4 w-4 bg-slate-800 rounded" />
+							</div>
+						</div>
+					</div>
+				))}
+			</div>
 		</div>
 	)
 }

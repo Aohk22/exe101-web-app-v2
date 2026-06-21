@@ -10,20 +10,24 @@ export const authMiddleware: Route.MiddlewareFunction = async ({
 }) => {
 	const session = await getSession(request.headers.get('Cookie'))
 	const userId = session.get('userId')
+	const userName = session.get('userName')
+	const userRole = session.get('userRole')
 
 	if (!userId) {
 		throw redirect('/login')
 	}
 
-	const user = await getUserById(userId)
-
-	if (!user) {
-		throw redirect('/register', {
-			headers: {
-				'Set-Cookie': await destroySession(session),
-			},
-		})
+	if (userName && userRole) {
+		context.set(userContext, { id: Number(userId), name: userName, role: userRole })
+	} else {
+		const user = await getUserById(userId)
+		if (!user) {
+			throw redirect('/register', {
+				headers: {
+					'Set-Cookie': await destroySession(session),
+				},
+			})
+		}
+		context.set(userContext, { id: user.id, name: user.name, role: user.role })
 	}
-
-	context.set(userContext, { id: user.id, name: user.name, role: user.role })
 }

@@ -2,16 +2,15 @@
 
 ## Commands
 
-| Command | What it does |
-|---|---|
-| `pnpm run dev` | Dev server at `localhost:5173` (Vite + React Router HMR) |
-| `pnpm run build` | Production build → `build/client/`, `build/server/` |
-| `pnpm run start` | Serve production build |
-| `pnpm run typecheck` | **Must run typegen first** — `react-router typegen && tsc` |
-| `pnpm run fmt` | Prettier (tabs, 4-space width, single quotes, no semicolons) |
-| `pnpm run db:push` | Drizzle-kit push (schema → PostgreSQL) |
-| `pnpm run db:seed` | Seed DB via `tsx ./scripts/seed.ts` |
-| `pnpm run db:wipe` | Wipe DB via `tsx ./scripts/wipe.ts` |
+| Command              | What it does                                                 |
+| -------------------- | ------------------------------------------------------------ |
+| `pnpm run dev`       | Dev server at `localhost:5173` (Vite + React Router HMR)     |
+| `pnpm run build`     | Production build → `build/client/`, `build/server/` (SSR)    |
+| `pnpm run typecheck` | **Must run typegen first** — `react-router typegen && tsc`   |
+| `pnpm run fmt`       | Prettier (tabs, 4-space width, single quotes, no semicolons) |
+| `pnpm run db:push`   | Drizzle-kit push (schema → PostgreSQL)                       |
+| `pnpm run db:seed`   | Seed DB via `tsx ./scripts/seed.ts`                          |
+| `pnpm run db:wipe`   | Wipe DB via `tsx ./scripts/wipe.ts`                          |
 
 No test or lint scripts exist.
 
@@ -24,6 +23,7 @@ pnpm run db:wipe && pnpm run db:push && pnpm run db:seed
 ## Environment
 
 `.env` is gitignored. Copy `example.env` and set:
+
 - `DATABASE_URL` (PostgreSQL required)
 - `SESSION_SECRET` (any random string)
 - `OPENROUTER_API_KEY` (optional, for AI tutor)

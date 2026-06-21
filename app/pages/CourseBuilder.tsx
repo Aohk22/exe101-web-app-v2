@@ -1,6 +1,7 @@
 import { asc, desc, eq } from 'drizzle-orm'
 import { CheckCircle2, Plus } from 'lucide-react'
-import { data, Link, redirect, useActionData, useLoaderData } from 'react-router'
+import { Await, data, Link, redirect, useActionData, useLoaderData } from 'react-router'
+import { Suspense } from 'react'
 import { z } from 'zod'
 import CourseBuilderWorkspace from '~/components/course-builder/CourseBuilderWorkspace'
 import CourseListPanel from '~/components/course-builder/CourseListPanel'
@@ -218,13 +219,28 @@ function getSavedMessage(saved: string | null) {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-	const user = await requireStaffUser(context)
+	await requireStaffUser(context)
 	const url = new URL(request.url)
 	const selectedCourseId = Number(url.searchParams.get('courseId'))
 	const selectedModuleId = Number(url.searchParams.get('moduleId'))
 	const selectedLessonId = Number(url.searchParams.get('lessonId'))
 	const saved = url.searchParams.get('saved')
 
+	return {
+		saved,
+		dataPromise: loadBuilderData(
+			selectedCourseId,
+			selectedModuleId,
+			selectedLessonId,
+		),
+	}
+}
+
+async function loadBuilderData(
+	selectedCourseId: number,
+	selectedModuleId: number,
+	selectedLessonId: number,
+) {
 	const [categoryOptions, builderCourses] = await Promise.all([
 		getCategories(),
 		getBuilderCourses(),
@@ -251,14 +267,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 		null
 
 	return {
-		user,
 		categories: categoryOptions,
 		courses: builderCourses,
 		selectedCourse,
 		curriculum,
 		selectedModule,
 		selectedLesson,
-		saved,
 	}
 }
 
@@ -447,24 +461,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function CourseBuilder() {
-	const {
-		categories: categoryOptions,
-		courses: builderCourses,
-		selectedCourse,
-		curriculum,
-		selectedModule,
-		selectedLesson,
-		saved,
-	}: {
-		categories: Category[]
-		courses: BuilderCourse[]
-		selectedCourse: BuilderCourse | null
-		curriculum: CurriculumModule[]
-		selectedModule: CurriculumModule | null
-		selectedLesson: { id: number } | null
-		saved: string | null
-		user: User
-	} = useLoaderData()
+	const { saved, dataPromise } = useLoaderData<typeof loader>()
 	const actionData = useActionData<typeof action>() as ActionResult | undefined
 	const savedMessage = getSavedMessage(saved)
 
@@ -501,22 +498,48 @@ export default function CourseBuilder() {
 				</div>
 			) : null}
 
-			<div className="space-y-8">
-				<CourseListPanel
-					courses={builderCourses}
-					selectedCourseId={selectedCourse?.id ?? null}
-					buildPath={({ courseId }) => buildCourseBuilderPath({ courseId })}
-				/>
+			<Suspense fallback={<CourseBuilderSkeleton />}>
+				<Await resolve={dataPromise}>
+					{(data) => {
+						const {
+							categories: categoryOptions,
+							courses: builderCourses,
+							selectedCourse,
+							curriculum,
+							selectedModule,
+							selectedLesson,
+						} = data
 
-				<CourseBuilderWorkspace
-					key={selectedCourse?.id ?? 'new-course'}
-					categories={categoryOptions}
-					selectedCourse={selectedCourse}
-					curriculum={curriculum}
-					selectedModuleId={selectedModule?.id ?? null}
-					selectedLessonId={selectedLesson?.id ?? null}
-				/>
-			</div>
+						return (
+							<div className="space-y-8">
+								<CourseListPanel
+									courses={builderCourses}
+									selectedCourseId={selectedCourse?.id ?? null}
+									buildPath={({ courseId }) => buildCourseBuilderPath({ courseId })}
+								/>
+
+								<CourseBuilderWorkspace
+									key={selectedCourse?.id ?? 'new-course'}
+									categories={categoryOptions}
+									selectedCourse={selectedCourse}
+									curriculum={curriculum}
+									selectedModuleId={selectedModule?.id ?? null}
+									selectedLessonId={selectedLesson?.id ?? null}
+								/>
+							</div>
+						)
+					}}
+				</Await>
+			</Suspense>
+		</div>
+	)
+}
+
+function CourseBuilderSkeleton() {
+	return (
+		<div className="space-y-8 animate-pulse">
+			<div className="h-96 bg-slate-800 rounded-xl" />
+			<div className="h-64 bg-slate-800 rounded-xl" />
 		</div>
 	)
 }
