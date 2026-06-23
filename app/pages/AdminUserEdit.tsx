@@ -1,32 +1,49 @@
+import { sql } from 'drizzle-orm'
 import {
 	CheckCircle2,
 	Loader2,
-	Mail,
 	Lock,
-	User,
+	Mail,
 	ShieldCheck,
+	Trash2,
+	User,
 } from 'lucide-react'
 import {
 	data,
 	Form,
 	redirect,
 	useActionData,
+	useLoaderData,
 	useNavigation,
 } from 'react-router'
 import { z } from 'zod'
-import { register } from '~/.server/auth/register'
+import { db } from '~/.server/database/connection'
 import { userContext } from '~/context'
 import { NoUserContextError } from '~/error'
-import type { Route } from './+types/AdminCreateUser'
+import type { Route } from './+types/AdminUserEdit'
 
 export const handle = {
 	section: {
-		title: 'Create User',
-		subtitle: 'Add a new learner or staff account.',
+		title: 'Edit User',
+		subtitle: 'Update account details or change role.',
 	},
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+const userSchema = z.object({
+	id: z.coerce.number(),
+	name: z.string(),
+	email: z.string(),
+	role: z.string(),
+})
+
+const updateSchema = z.object({
+	name: z.string().trim().min(1, 'Name is required'),
+	email: z.string().trim().email('Invalid email address'),
+	password: z.string().optional(),
+	role: z.enum(['learner', 'staff']),
+})
+
+export async function loader({ params, context }: Route.LoaderArgs) {
 	const user = context.get(userContext)
 	if (user === null) {
 		throw new NoUserContextError('User context resolved to null.')
@@ -34,56 +51,76 @@ export async function loader({ context }: Route.LoaderArgs) {
 	if (user.role !== 'staff') {
 		throw redirect('/')
 	}
-	return null
+
+	const result = await db.execute(
+		sql`SELECT id, name, email, role FROM users WHERE id = ${params.userId}`,
+	)
+	if (result.rows.length === 0) {
+		throw redirect('/admin/users')
+	}
+
+	return { user: userSchema.parse(result.rows[0]) }
 }
 
-const createUserSchema = z.object({
-	name: z.string().trim().min(1, 'Name is required'),
-	email: z.string().trim().email('Invalid email address'),
-	password: z.string().min(8, 'Password must be at least 8 characters'),
-	role: z.enum(['learner', 'staff']),
-})
-
-export async function action({ request, context }: Route.ActionArgs) {
-	const user = context.get(userContext)
-	if (user === null) {
+export async function action({ request, params, context }: Route.ActionArgs) {
+	const staffUser = context.get(userContext)
+	if (staffUser === null) {
 		throw new NoUserContextError('User context resolved to null.')
 	}
-	if (user.role !== 'staff') {
+	if (staffUser.role !== 'staff') {
 		throw redirect('/')
 	}
 
 	const form = await request.formData()
-	const parsed = createUserSchema.safeParse({
-		name: form.get('name'),
-		email: form.get('email'),
-		password: form.get('password'),
-		role: form.get('role'),
-	})
+	const intent = form.get('intent')
 
-	if (!parsed.success) {
-		return data(
-			{ error: parsed.error.issues[0]?.message ?? 'Invalid input.' },
-			{ status: 400 },
+	if (intent === 'delete-user') {
+		await db.execute(
+			sql`DELETE FROM users WHERE id = ${params.userId}`,
 		)
+		throw redirect('/admin/users')
 	}
 
-	const { name, email, password, role } = parsed.data
-	const rowsChanged = await register(name, email, password, role)
+	if (intent === 'update-user') {
+		const parsed = updateSchema.safeParse({
+			name: form.get('name'),
+			email: form.get('email'),
+			password: form.get('password') || undefined,
+			role: form.get('role'),
+		})
 
-	if (rowsChanged === 1) {
-		throw redirect('/admin?created=user')
+		if (!parsed.success) {
+			return data(
+				{ error: parsed.error.issues[0]?.message ?? 'Invalid input.' },
+				{ status: 400 },
+			)
+		}
+
+		const { name, email, password, role } = parsed.data
+
+		if (password) {
+			const bcrypt = await import('bcrypt')
+			const hashed = await bcrypt.hash(password, 10)
+			await db.execute(
+				sql`UPDATE users SET name = ${name}, email = ${email}, role = ${role}, password = ${hashed} WHERE id = ${params.userId}`,
+			)
+		} else {
+			await db.execute(
+				sql`UPDATE users SET name = ${name}, email = ${email}, role = ${role} WHERE id = ${params.userId}`,
+			)
+		}
+
+		return data({ success: true, error: null })
 	}
 
-	return data(
-		{ error: 'A user with this email already exists.' },
-		{ status: 409 },
-	)
+	return data({ error: 'Invalid intent.' }, { status: 400 })
 }
 
-export default function AdminCreateUser() {
+export default function AdminUserEdit() {
+	const { user } = useLoaderData<typeof loader>()
 	const actionData = useActionData<typeof action>() as
-		| { error: string }
+		| { error: string; success?: undefined }
+		| { success: true; error: null }
 		| undefined
 	const navigation = useNavigation()
 	const isSubmitting = navigation.state === 'submitting'
@@ -93,6 +130,12 @@ export default function AdminCreateUser() {
 			{actionData?.error ? (
 				<div className="mb-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
 					{actionData.error}
+				</div>
+			) : null}
+			{actionData?.success ? (
+				<div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+					<CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+					<span>User updated successfully.</span>
 				</div>
 			) : null}
 
@@ -112,7 +155,7 @@ export default function AdminCreateUser() {
 								name="name"
 								type="text"
 								required
-								placeholder="Alex Johnson"
+								defaultValue={user.name}
 								className="w-full rounded-lg border border-slate-700 bg-slate-800 py-1.5 pl-9 pr-3 text-xs text-white placeholder-slate-500 outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
 							/>
 						</div>
@@ -132,7 +175,7 @@ export default function AdminCreateUser() {
 								name="email"
 								type="email"
 								required
-								placeholder="name@example.com"
+								defaultValue={user.email}
 								className="w-full rounded-lg border border-slate-700 bg-slate-800 py-1.5 pl-9 pr-3 text-xs text-white placeholder-slate-500 outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
 							/>
 						</div>
@@ -143,7 +186,7 @@ export default function AdminCreateUser() {
 							htmlFor="password"
 							className="text-xs font-semibold text-slate-300"
 						>
-							Password
+							New Password
 						</label>
 						<div className="relative">
 							<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
@@ -151,15 +194,10 @@ export default function AdminCreateUser() {
 								id="password"
 								name="password"
 								type="password"
-								required
-								minLength={8}
-								placeholder="••••••••"
+								placeholder="Leave blank to keep current"
 								className="w-full rounded-lg border border-slate-700 bg-slate-800 py-1.5 pl-9 pr-3 text-xs text-white placeholder-slate-500 outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
 							/>
 						</div>
-						<p className="text-[10px] text-slate-500">
-							Must be at least 8 characters.
-						</p>
 					</div>
 
 					<div className="space-y-1">
@@ -175,7 +213,7 @@ export default function AdminCreateUser() {
 								id="role"
 								name="role"
 								required
-								defaultValue="learner"
+								defaultValue={user.role}
 								className="w-full appearance-none rounded-lg border border-slate-700 bg-slate-800 py-1.5 pl-9 pr-8 text-xs text-white outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
 							>
 								<option value="learner">Learner</option>
@@ -185,7 +223,29 @@ export default function AdminCreateUser() {
 					</div>
 				</div>
 
-				<div className="flex items-center justify-end gap-3">
+				<div className="flex items-center justify-between gap-3">
+					<Form
+						method="POST"
+						onSubmit={(e) => {
+							if (
+								!window.confirm(
+									`Delete user "${user.name}"? This cannot be undone.`,
+								)
+							) {
+								e.preventDefault()
+							}
+						}}
+					>
+						<input type="hidden" name="intent" value="delete-user" />
+						<button
+							type="submit"
+							className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-bold text-red-300 transition-colors hover:bg-red-500/20"
+						>
+							<Trash2 className="h-3.5 w-3.5" />
+							Delete
+						</button>
+					</Form>
+					<input type="hidden" name="intent" value="update-user" />
 					<button
 						type="submit"
 						disabled={isSubmitting}
@@ -196,7 +256,7 @@ export default function AdminCreateUser() {
 						) : (
 							<CheckCircle2 className="h-3.5 w-3.5" />
 						)}
-						{isSubmitting ? 'Creating...' : 'Create User'}
+						{isSubmitting ? 'Saving...' : 'Save Changes'}
 					</button>
 				</div>
 			</Form>

@@ -13,6 +13,10 @@ import {
 	MessageCircle,
 	Map,
 	ShieldCheck,
+	Users,
+	BookMarked,
+	ChevronDown,
+	ChevronRight,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
@@ -28,6 +32,14 @@ const baseNavItems = [
 	{ label: 'Settings', href: '/settings', icon: Settings },
 ]
 
+const adminSubItems = [
+	{ label: 'Summary', href: '/admin', icon: LayoutDashboard },
+	{ label: 'Course Builder', href: '/course-builder', icon: SquarePen },
+	{ label: 'Users', href: '/admin/users', icon: Users },
+	{ label: 'Categories', href: '/admin/categories', icon: BookMarked },
+	{ label: 'Paths', href: '/admin/paths', icon: Map },
+]
+
 export default function MainLayout() {
 	const location = useLocation()
 	const matches = useMatches()
@@ -35,6 +47,12 @@ export default function MainLayout() {
 	const [aiOpen, setAiOpen] = useState(false)
 	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 	const [sidebarWidth, setSidebarWidth] = useState(256)
+	const [adminOpen, setAdminOpen] = useState(() => {
+		const path = location.pathname
+		return (
+			path.startsWith('/admin') || path.startsWith('/course-builder')
+		)
+	})
 	const [theme, setTheme] = useState<'light' | 'dark'>(() => {
 		if (typeof document !== 'undefined') {
 			const el = document.documentElement
@@ -60,21 +78,11 @@ export default function MainLayout() {
 		})
 		.find((user) => user !== null)
 	const navItems =
-		currentUser?.role === 'staff'
-			? [
-				...baseNavItems,
-				{
-					label: 'Course Builder',
-					href: '/course-builder',
-					icon: SquarePen,
-				},
-				{
-					label: 'Admin',
-					href: '/admin',
-					icon: ShieldCheck,
-				},
-			]
-			: baseNavItems
+		currentUser?.role === 'staff' ? baseNavItems : baseNavItems
+
+	const isAdminActive =
+		location.pathname.startsWith('/admin') ||
+		location.pathname.startsWith('/course-builder')
 
 	useEffect(() => {
 		const storedTheme = window.localStorage.getItem('theme')
@@ -195,6 +203,72 @@ export default function MainLayout() {
 						)
 					})}
 
+					{/* Admin dropdown for staff */}
+					{currentUser?.role === 'staff' ? (
+						<>
+							{isSidebarCollapsed ? (
+								<Link
+									to="/admin"
+									className={`flex items-center justify-center px-6 py-3 text-sm font-medium transition-colors relative ${isAdminActive
+											? 'bg-emerald-500/10 text-emerald-400 border-r-2 border-emerald-500'
+											: 'text-slate-400 hover:bg-slate-800 hover:text-white'
+										}`}
+									title="Admin Panel"
+								>
+									<ShieldCheck className="w-5 h-5" />
+								</Link>
+							) : (
+								<>
+									<button
+										onClick={() =>
+											setAdminOpen(!adminOpen)
+										}
+										className={`flex items-center w-full gap-3 px-6 py-3 text-sm font-medium transition-colors relative ${isAdminActive
+												? 'bg-emerald-500/10 text-emerald-400 border-r-2 border-emerald-500'
+												: 'text-slate-400 hover:bg-slate-800 hover:text-white'
+											}`}
+									>
+										<ShieldCheck className="w-5 h-5 shrink-0" />
+										<span className="flex-1 text-left">
+											Admin Panel
+										</span>
+										{adminOpen ? (
+											<ChevronDown className="w-4 h-4" />
+										) : (
+											<ChevronRight className="w-4 h-4" />
+										)}
+									</button>
+									{adminOpen && (
+										<div className="border-l border-slate-700 ml-6">
+											{adminSubItems.map((sub) => {
+												const isSubActive =
+													sub.href === '/admin'
+														? location.pathname ===
+														'/admin'
+														: location.pathname.startsWith(
+															sub.href,
+														)
+												return (
+													<Link
+														key={sub.href}
+														to={sub.href}
+														className={`flex items-center gap-3 pl-4 pr-6 py-2 text-xs font-medium transition-colors ${isSubActive
+																? 'text-emerald-400'
+																: 'text-slate-400 hover:text-white'
+															}`}
+													>
+														<sub.icon className="w-4 h-4 shrink-0" />
+														{sub.label}
+													</Link>
+												)
+											})}
+										</div>
+									)}
+								</>
+							)}
+						</>
+					) : null}
+
 					{/* Pro Upgrade Card in Sidebar */}
 					{!isSidebarCollapsed && currentUser?.role !== 'staff' && (
 						<div className="mt-8 px-2">
@@ -287,7 +361,24 @@ export default function MainLayout() {
 
 			<button
 				onClick={() => setAiOpen(true)}
-				style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', background: '#059669', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 8px 32px rgba(5,150,105,0.5)' }}
+				style={{
+					position: 'fixed',
+					bottom: '24px',
+					right: '24px',
+					zIndex: 9999,
+					display: 'flex',
+					alignItems: 'center',
+					gap: '8px',
+					padding: '12px 20px',
+					background: '#059669',
+					color: 'white',
+					border: 'none',
+					borderRadius: '16px',
+					fontWeight: 700,
+					fontSize: '14px',
+					cursor: 'pointer',
+					boxShadow: '0 8px 32px rgba(5,150,105,0.5)',
+				}}
 			>
 				<MessageCircle style={{ width: 16, height: 16 }} />
 				AI Tutor

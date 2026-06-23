@@ -44,19 +44,21 @@ export default function SectionLayout() {
 		section && activeMatch
 			? resolveSectionValue(section.title, activeMatch)
 			: null
-	const subtitle = section
-		&& activeMatch
+	const subtitle =
+		section && activeMatch
 			? resolveSectionValue(section.subtitle, activeMatch)
-		: null
+			: null
 	const contentClassName = section?.contentClassName ?? ''
 
 	return (
-		<div className={contentClassName ? `${contentClassName} pb-20` : 'pb-20'}>
+		<div
+			className={contentClassName ? `${contentClassName} pb-10` : 'pb-10'}
+		>
 			{title ? (
-				<header className="mb-10">
-					<h1 className="text-3xl font-bold text-white">{title}</h1>
+				<header className="mb-6">
+					<h1 className="text-2xl font-bold text-white">{title}</h1>
 					{subtitle ? (
-						<p className="mt-1 text-slate-400">{subtitle}</p>
+						<p className="text-sm text-slate-400">{subtitle}</p>
 					) : null}
 				</header>
 			) : null}
