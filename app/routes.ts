@@ -36,7 +36,11 @@ export default [
 
 				route('admin', './pages/AdminDashboard.tsx'),
 
+				route('admin/users/new', './pages/AdminCreateUser.tsx'),
+
 				route('course-builder', './pages/CourseBuilder.tsx'),
+
+			route('course-builder/:courseId/lessons/:lessonId', './pages/CourseBuilderLesson.tsx'),
 
 			]),
 		]),

@@ -1,13 +1,11 @@
-import { FileText, FolderTree, Save, SlidersHorizontal } from 'lucide-react'
-import { Form, useNavigation } from 'react-router'
-import { useMemo, useState } from 'react'
+import { Save, BookOpen } from 'lucide-react'
+import { Form, useNavigate, useNavigation } from 'react-router'
+import { useState } from 'react'
 import type { Category } from '~/.server/database/types'
 import CourseDetailsForm from './CourseDetailsForm'
-import CurriculumPanel from './CurriculumPanel'
-import LessonEditorPanel from './LessonEditorPanel'
+import CourseTreeView from './CourseTreeView'
 import type {
 	BuilderCourse,
-	ChallengeQuestionDraft,
 	CourseDraft,
 	CurriculumModule,
 	LessonDraft,
@@ -15,11 +13,10 @@ import type {
 } from './types'
 
 type CourseBuilderWorkspaceProps = {
+	courses: BuilderCourse[]
 	categories: Category[]
 	selectedCourse: BuilderCourse | null
 	curriculum: CurriculumModule[]
-	selectedModuleId: number | null
-	selectedLessonId: number | null
 }
 
 function createClientId(prefix: string) {
@@ -50,15 +47,10 @@ function buildInitialDraft(
 	selectedCourse: BuilderCourse | null,
 	curriculum: CurriculumModule[],
 	selectedModuleId: number | null,
-	selectedLessonId: number | null,
 ): CourseDraft {
 	const modules = curriculum.map(toModuleDraft)
 	const initialSelectedModule =
 		modules.find((module) => module.id === selectedModuleId) ?? modules[0] ?? null
-	const initialSelectedLesson =
-		initialSelectedModule?.lessons.find((lesson) => lesson.id === selectedLessonId) ??
-		initialSelectedModule?.lessons[0] ??
-		null
 
 	return {
 		id: selectedCourse?.id ?? null,
@@ -70,37 +62,23 @@ function buildInitialDraft(
 		categoryId: selectedCourse?.categoryId ?? null,
 		modules,
 		selectedModuleClientId: initialSelectedModule?.clientId ?? null,
-		selectedLessonClientId: initialSelectedLesson?.clientId ?? null,
+		selectedLessonClientId: null,
 	}
 }
 
 export default function CourseBuilderWorkspace({
+	courses,
 	categories,
 	selectedCourse,
 	curriculum,
-	selectedModuleId,
-	selectedLessonId,
 }: CourseBuilderWorkspaceProps) {
+	const navigate = useNavigate()
 	const navigation = useNavigation()
 	const [draft, setDraft] = useState(() =>
-		buildInitialDraft(
-			selectedCourse,
-			curriculum,
-			selectedModuleId,
-			selectedLessonId,
-		),
+		buildInitialDraft(selectedCourse, curriculum, null),
 	)
 	const isSaving = navigation.state === 'submitting'
-	const [activeSection, setActiveSection] = useState<
-		'course' | 'curriculum' | 'lesson'
-	>('course')
-	const selectedModule = useMemo(
-		() =>
-			draft.modules.find(
-				(module) => module.clientId === draft.selectedModuleClientId,
-			) ?? null,
-		[draft.modules, draft.selectedModuleClientId],
-	)
+	const hasSelection = selectedCourse != null || draft.id != null
 
 	function updateDraft(updater: (current: CourseDraft) => CourseDraft) {
 		setDraft((current) => updater(current))
@@ -125,24 +103,9 @@ export default function CourseBuilderWorkspace({
 	}
 
 	function handleSelectModule(moduleClientId: string) {
-		updateDraft((current) => {
-			const selected = current.modules.find(
-				(module) => module.clientId === moduleClientId,
-			)
-
-			return {
-				...current,
-				selectedModuleClientId: moduleClientId,
-				selectedLessonClientId: selected?.lessons[0]?.clientId ?? null,
-			}
-		})
-	}
-
-	function handleSelectLesson(moduleClientId: string, lessonClientId: string) {
 		updateDraft((current) => ({
 			...current,
 			selectedModuleClientId: moduleClientId,
-			selectedLessonClientId: lessonClientId,
 		}))
 	}
 
@@ -160,7 +123,6 @@ export default function CourseBuilderWorkspace({
 				},
 			],
 			selectedModuleClientId: moduleClientId,
-			selectedLessonClientId: null,
 		}))
 	}
 
@@ -196,221 +158,150 @@ export default function CourseBuilderWorkspace({
 					: module,
 			),
 			selectedModuleClientId: moduleClientId,
-			selectedLessonClientId: lessonClientId,
 		}))
 	}
 
-	function handleLessonFieldChange(
-		moduleClientId: string,
-		lessonClientId: string,
-		field: 'title' | 'contentMd',
-		value: string,
-	) {
-		updateDraft((current) => ({
-			...current,
-			modules: current.modules.map((module) =>
-				module.clientId === moduleClientId
-					? {
-							...module,
-							lessons: module.lessons.map((lesson) =>
-								lesson.clientId === lessonClientId
-									? { ...lesson, [field]: value }
-									: lesson,
-							),
-						}
-					: module,
-			),
-		}))
-	}
-
-	function handleLessonLengthChange(
-		moduleClientId: string,
-		lessonClientId: string,
-		value: number,
-	) {
-		updateDraft((current) => ({
-			...current,
-			modules: current.modules.map((module) =>
-				module.clientId === moduleClientId
-					? {
-							...module,
-							lessons: module.lessons.map((lesson) =>
-								lesson.clientId === lessonClientId
-									? {
-											...lesson,
-											length: Number.isFinite(value) ? value : 0,
-										}
-									: lesson,
-							),
-						}
-					: module,
-			),
-		}))
-	}
-
-	function handleChallengeQuestionChange(
-		moduleClientId: string,
-		lessonClientId: string,
-		questions: ChallengeQuestionDraft[],
-	) {
-		updateDraft((current) => ({
-			...current,
-			modules: current.modules.map((module) =>
-				module.clientId === moduleClientId
-					? {
-							...module,
-							lessons: module.lessons.map((lesson) =>
-								lesson.clientId === lessonClientId
-									? { ...lesson, challengeQuestions: questions }
-									: lesson,
-							),
-						}
-					: module,
-			),
-		}))
-	}
-
-	function handleMoveSelectedLesson(nextModuleClientId: string) {
-		if (
-			draft.selectedModuleClientId == null ||
-			draft.selectedLessonClientId == null ||
-			draft.selectedModuleClientId === nextModuleClientId
-		) {
-			handleSelectModule(nextModuleClientId)
-			return
-		}
-
+	function handleDeleteModule(moduleClientId: string) {
 		updateDraft((current) => {
-			const sourceModule = current.modules.find(
-				(module) => module.clientId === current.selectedModuleClientId,
+			const moduleIndex = current.modules.findIndex(
+				(m) => m.clientId === moduleClientId,
 			)
-			const movingLesson = sourceModule?.lessons.find(
-				(lesson) => lesson.clientId === current.selectedLessonClientId,
+			const nextModules = current.modules.filter(
+				(m) => m.clientId !== moduleClientId,
 			)
+			let nextSelectedModule = current.selectedModuleClientId
 
-			if (!movingLesson) {
-				return {
-					...current,
-					selectedModuleClientId: nextModuleClientId,
-				}
+			if (current.selectedModuleClientId === moduleClientId) {
+				const newIndex = Math.min(moduleIndex, nextModules.length - 1)
+				const target = nextModules[newIndex] ?? null
+				nextSelectedModule = target?.clientId ?? null
 			}
 
 			return {
 				...current,
-				modules: current.modules.map((module) => {
-					if (module.clientId === current.selectedModuleClientId) {
-						return {
-							...module,
-							lessons: module.lessons.filter(
-								(lesson) => lesson.clientId !== movingLesson.clientId,
-							),
-						}
-					}
-
-					if (module.clientId === nextModuleClientId) {
-						return {
-							...module,
-							lessons: [...module.lessons, movingLesson],
-						}
-					}
-
-					return module
-				}),
-				selectedModuleClientId: nextModuleClientId,
-				selectedLessonClientId: movingLesson.clientId,
+				modules: nextModules,
+				selectedModuleClientId: nextSelectedModule,
 			}
 		})
 	}
+
+	function handleUpdateLessonTitle(
+		moduleClientId: string,
+		lessonClientId: string,
+		title: string,
+	) {
+		updateDraft((current) => ({
+			...current,
+			modules: current.modules.map((module) =>
+				module.clientId === moduleClientId
+					? {
+							...module,
+							lessons: module.lessons.map((lesson) =>
+								lesson.clientId === lessonClientId
+									? { ...lesson, title }
+									: lesson,
+							),
+						}
+					: module,
+			),
+		}))
+	}
+
+	function handleDeleteLesson(
+		moduleClientId: string,
+		lessonClientId: string,
+	) {
+		updateDraft((current) => ({
+			...current,
+			modules: current.modules.map((module) =>
+				module.clientId === moduleClientId
+					? {
+							...module,
+							lessons: module.lessons.filter(
+								(l) => l.clientId !== lessonClientId,
+							),
+						}
+					: module,
+			),
+		}))
+	}
+
+	function handleCourseChange(event: React.ChangeEvent<HTMLSelectElement>) {
+		const value = event.target.value
+		if (value === '__new__') {
+			navigate('/course-builder')
+		} else if (value) {
+			navigate(`/course-builder?courseId=${value}`)
+		}
+	}
+
+	const totalLessons = draft.modules.reduce(
+		(total, m) => total + m.lessons.length,
+		0,
+	)
 
 	return (
 		<Form method="post" className="space-y-6">
 			<input type="hidden" name="intent" value="save-draft" />
 			<input type="hidden" name="draftJson" value={JSON.stringify(draft)} />
 
-			<div className="grid gap-6 xl:grid-cols-[220px_minmax(0,1fr)]">
-				<aside className="xl:sticky xl:top-24 h-fit rounded-3xl border border-slate-800 bg-slate-900 p-3">
-					<p className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-						Builder Nav
-					</p>
-					<div className="mt-2 space-y-2">
-						<button
-							type="button"
-							onClick={() => setActiveSection('course')}
-							className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium transition-colors ${
-								activeSection === 'course'
-									? 'bg-emerald-500/10 text-emerald-300'
-									: 'text-slate-300 hover:bg-slate-800'
-							}`}
+			<div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
+				{/* Left panel — tree sidebar */}
+				<aside className="xl:sticky xl:top-24 h-fit space-y-3">
+					{/* Course selector */}
+					<div>
+						<p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+							Course
+						</p>
+						<select
+							value={selectedCourse?.id ?? '__new__'}
+							onChange={handleCourseChange}
+							className="mt-1.5 w-full rounded-lg border border-slate-800 bg-slate-950/50 px-2 py-1.5 text-sm text-white outline-none transition focus:border-emerald-500/40"
 						>
-							<SlidersHorizontal className="h-4 w-4" />
-							<div>
-								<p>Course Details</p>
-								<p className="text-xs text-slate-500">
-									Title, category, thumbnail
-								</p>
-							</div>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setActiveSection('curriculum')}
-							className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium transition-colors ${
-								activeSection === 'curriculum'
-									? 'bg-emerald-500/10 text-emerald-300'
-									: 'text-slate-300 hover:bg-slate-800'
-							}`}
-						>
-							<FolderTree className="h-4 w-4" />
-							<div>
-								<p>Curriculum</p>
-								<p className="text-xs text-slate-500">
-									Manage modules and lessons
-								</p>
-							</div>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setActiveSection('lesson')}
-							className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-medium transition-colors ${
-								activeSection === 'lesson'
-									? 'bg-emerald-500/10 text-emerald-300'
-									: 'text-slate-300 hover:bg-slate-800'
-							}`}
-						>
-							<FileText className="h-4 w-4" />
-							<div>
-								<p>Lesson Editor</p>
-								<p className="text-xs text-slate-500">
-									Edit markdown and preview
-								</p>
-							</div>
-						</button>
+							<option value="__new__">New Course</option>
+							{courses.map((course) => (
+								<option key={course.id} value={course.id}>
+									{course.title}
+								</option>
+							))}
+						</select>
 					</div>
 
-					<div className="mt-3 rounded-2xl border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
-						<div>{draft.modules.length} modules in draft</div>
-						<div className="mt-1">
-							{draft.modules.reduce(
-								(total, module) => total + module.lessons.length,
-								0,
-							)}{' '}
-							lessons in draft
-						</div>
+					{/* Tree */}
+					{hasSelection && (
+						<CourseTreeView
+							modules={draft.modules}
+							courseId={selectedCourse?.id ?? null}
+							selectedModuleClientId={draft.selectedModuleClientId}
+							onSelectModule={handleSelectModule}
+							onAddModule={handleAddModule}
+							onAddLesson={handleAddLesson}
+							onUpdateModuleTitle={handleUpdateModuleTitle}
+							onUpdateLessonTitle={handleUpdateLessonTitle}
+							onDeleteModule={handleDeleteModule}
+							onDeleteLesson={handleDeleteLesson}
+						/>
+					)}
+
+					{/* Stats */}
+					<div className="border-t border-slate-800 pt-2 text-[11px] text-slate-500">
+						{draft.modules.length} module{draft.modules.length !== 1 ? 's' : ''}, {totalLessons} lesson{totalLessons !== 1 ? 's' : ''}
 					</div>
 
+					{/* Save */}
 					<button
 						type="submit"
-						className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+						className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
 						disabled={isSaving}
 					>
-						<Save className="h-4 w-4" />
+						<Save className="h-3.5 w-3.5" />
 						{isSaving ? 'Saving...' : 'Save All Changes'}
 					</button>
 				</aside>
 
-				<div className="min-w-0 space-y-6">
-					{activeSection === 'course' ? (
+				{/* Right panel — content editor */}
+				<div className="min-w-0">
+					{selectedCourse != null || draft.id == null ? (
 						<CourseDetailsForm
 							categories={categories}
 							draft={draft}
@@ -419,33 +310,17 @@ export default function CourseBuilderWorkspace({
 							onLengthChange={handleLengthChange}
 							onCategoryChange={handleCategoryChange}
 						/>
-					) : null}
-
-					{activeSection === 'curriculum' ? (
-						<CurriculumPanel
-							modules={draft.modules}
-							selectedModuleClientId={draft.selectedModuleClientId}
-							selectedLessonClientId={draft.selectedLessonClientId}
-							onSelectModule={handleSelectModule}
-							onSelectLesson={handleSelectLesson}
-							onAddModule={handleAddModule}
-							onUpdateModuleTitle={handleUpdateModuleTitle}
-							onAddLesson={handleAddLesson}
-						/>
-					) : null}
-
-					{activeSection === 'lesson' ? (
-						<LessonEditorPanel
-							courseId={selectedCourse?.id ?? null}
-							modules={draft.modules}
-							selectedModuleClientId={draft.selectedModuleClientId}
-							selectedLessonClientId={draft.selectedLessonClientId}
-							onSelectModule={handleMoveSelectedLesson}
-							onLessonFieldChange={handleLessonFieldChange}
-							onLessonLengthChange={handleLessonLengthChange}
-							onChallengeQuestionChange={handleChallengeQuestionChange}
-						/>
-					) : null}
+					) : (
+						<div className="p-6 text-center">
+							<BookOpen className="mx-auto h-8 w-8 text-slate-600" />
+							<p className="mt-3 text-sm font-medium text-white">
+								Select a Course
+							</p>
+							<p className="mt-1 text-xs text-slate-500">
+								Choose an existing course from the dropdown or start a new one.
+							</p>
+						</div>
+					)}
 				</div>
 			</div>
 		</Form>

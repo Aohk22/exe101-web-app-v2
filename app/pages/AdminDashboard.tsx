@@ -8,10 +8,11 @@ import {
 	Eye,
 	GraduationCap,
 	MousePointerClick,
+	Plus,
 	TrendingUp,
 	Users,
 } from 'lucide-react'
-import { redirect, useLoaderData } from 'react-router'
+import { Link, redirect, useLoaderData } from 'react-router'
 import { z } from 'zod'
 import { db } from '~/.server/database/connection'
 import { userContext } from '~/context'
@@ -337,7 +338,7 @@ function ConversionFunnel() {
 	)
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
 	const user = context.get(userContext)
 	if (user === null) {
 		throw new NoUserContextError('User context resolved to null.')
@@ -346,6 +347,9 @@ export async function loader({ context }: Route.LoaderArgs) {
 	if (user.role !== 'staff') {
 		throw redirect('/')
 	}
+
+	const url = new URL(request.url)
+	const created = url.searchParams.get('created')
 
 	const [metricsResult, completionsResult] = await Promise.all([
 		db.execute(sql`
@@ -387,11 +391,12 @@ export async function loader({ context }: Route.LoaderArgs) {
 	return {
 		metrics: adminMetricsSchema.parse(metricsResult.rows[0]),
 		completions: z.array(completionRowSchema).parse(completionsResult.rows),
+		created: created === 'user',
 	}
 }
 
 export default function AdminDashboard() {
-	const { metrics, completions } = useLoaderData<typeof loader>()
+	const { metrics, completions, created } = useLoaderData<typeof loader>()
 	const completionRate =
 		metrics.totalTrackedLessons === 0
 			? 0
@@ -399,38 +404,54 @@ export default function AdminDashboard() {
 
 	return (
 		<div className="space-y-8">
-			<section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-				<MetricCard
-					label="Purchases"
-					value="$18.4K"
-					icon={BadgeDollarSign}
-					tone="bg-amber-400/10 text-amber-400"
-					meta="Payment integration showcase"
-					showcase
-				/>
-				<MetricCard
-					label="Visits"
-					value="12.5K"
-					icon={Eye}
-					tone="bg-blue-400/10 text-blue-400"
-					meta="Analytics integration showcase"
-					showcase
-				/>
-				<MetricCard
-					label="Course Completion"
-					value={formatPercent(completionRate)}
-					icon={CheckCircle2}
-					tone="bg-emerald-400/10 text-emerald-400"
-					meta={`${metrics.completedLessons}/${metrics.totalTrackedLessons} lesson records`}
-				/>
-				<MetricCard
-					label="Learners"
-					value={compactNumber(metrics.totalUsers)}
-					icon={Users}
-					tone="bg-purple-400/10 text-purple-400"
-					meta={`${metrics.totalEnrollments} enrollments across ${metrics.totalCourses} courses`}
-				/>
-			</section>
+			{created ? (
+				<div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+					<CheckCircle2 className="h-4 w-4 shrink-0" />
+					<span>User created successfully.</span>
+				</div>
+			) : null}
+
+			<div className="flex items-start justify-between gap-4">
+				<section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 flex-1">
+					<MetricCard
+						label="Purchases"
+						value="$18.4K"
+						icon={BadgeDollarSign}
+						tone="bg-amber-400/10 text-amber-400"
+						meta="Payment integration showcase"
+						showcase
+					/>
+					<MetricCard
+						label="Visits"
+						value="12.5K"
+						icon={Eye}
+						tone="bg-blue-400/10 text-blue-400"
+						meta="Analytics integration showcase"
+						showcase
+					/>
+					<MetricCard
+						label="Course Completion"
+						value={formatPercent(completionRate)}
+						icon={CheckCircle2}
+						tone="bg-emerald-400/10 text-emerald-400"
+						meta={`${metrics.completedLessons}/${metrics.totalTrackedLessons} lesson records`}
+					/>
+					<MetricCard
+						label="Learners"
+						value={compactNumber(metrics.totalUsers)}
+						icon={Users}
+						tone="bg-purple-400/10 text-purple-400"
+						meta={`${metrics.totalEnrollments} enrollments across ${metrics.totalCourses} courses`}
+					/>
+				</section>
+				<Link
+					to="/admin/users/new"
+					className="inline-flex items-center justify-center gap-2 shrink-0 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700"
+				>
+					<Plus className="h-4 w-4" />
+					Create User
+				</Link>
+			</div>
 
 			<section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
 				<CompletionBarChart rows={completions} />

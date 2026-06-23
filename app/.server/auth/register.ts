@@ -4,14 +4,18 @@ import bcrypt from 'bcrypt'
 
 const saltRounds = 10
 
-export async function register(name: string, email: string, password: string) {
+export async function register(
+	name: string,
+	email: string,
+	password: string,
+	role?: string,
+) {
 	const hashed = await bcrypt.hash(password, saltRounds)
 
 	try {
-		const statement = sql`
-			INSERT INTO users (name, email, password)
-			VALUES (${name}, ${email}, ${hashed})
-		`
+		const statement = role
+			? sql`INSERT INTO users (name, email, password, role) VALUES (${name}, ${email}, ${hashed}, ${role})`
+			: sql`INSERT INTO users (name, email, password) VALUES (${name}, ${email}, ${hashed})`
 
 		const res = await db.execute(statement)
 

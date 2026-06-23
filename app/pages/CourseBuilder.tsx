@@ -4,10 +4,8 @@ import { Await, data, Link, redirect, useActionData, useLoaderData } from 'react
 import { Suspense } from 'react'
 import { z } from 'zod'
 import CourseBuilderWorkspace from '~/components/course-builder/CourseBuilderWorkspace'
-import CourseListPanel from '~/components/course-builder/CourseListPanel'
 import type {
 	ActionResult,
-	BuilderCourse,
 	CourseDraft,
 	CurriculumModule,
 } from '~/components/course-builder/types'
@@ -67,7 +65,9 @@ const courseDraftSchema = z.object({
 		.min(1, 'Description is required')
 		.max(255, 'Description must be 255 characters or fewer'),
 	instructor: z.string().trim().min(1, 'Instructor is required'),
-	thumbnail: z.string().trim().url('Thumbnail must be a valid URL'),
+	thumbnail: z.string().trim().pipe(
+		z.union([z.literal(''), z.string().url('Thumbnail must be a valid URL')]),
+	),
 	length: z.number().int().min(0, 'Length must be 0 or greater'),
 	categoryId: z.number().int().positive('Choose a category').nullable(),
 	modules: z.array(moduleDraftSchema),
@@ -506,25 +506,16 @@ export default function CourseBuilder() {
 							courses: builderCourses,
 							selectedCourse,
 							curriculum,
-							selectedModule,
-							selectedLesson,
 						} = data
 
 						return (
 							<div className="space-y-8">
-								<CourseListPanel
-									courses={builderCourses}
-									selectedCourseId={selectedCourse?.id ?? null}
-									buildPath={({ courseId }) => buildCourseBuilderPath({ courseId })}
-								/>
-
 								<CourseBuilderWorkspace
 									key={selectedCourse?.id ?? 'new-course'}
+									courses={builderCourses}
 									categories={categoryOptions}
 									selectedCourse={selectedCourse}
 									curriculum={curriculum}
-									selectedModuleId={selectedModule?.id ?? null}
-									selectedLessonId={selectedLesson?.id ?? null}
 								/>
 							</div>
 						)
