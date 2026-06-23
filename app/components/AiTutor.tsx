@@ -13,7 +13,11 @@ interface AiTutorProps {
 	lessonContext?: string // e.g. "Legal & Ethical Considerations" — passed from the lesson page
 }
 
-export default function AiTutor({ isOpen, onClose, lessonContext }: AiTutorProps) {
+export default function AiTutor({
+	isOpen,
+	onClose,
+	lessonContext,
+}: AiTutorProps) {
 	const [messages, setMessages] = useState<Message[]>([])
 	const [input, setInput] = useState('')
 	const [loading, setLoading] = useState(false)
@@ -37,7 +41,10 @@ export default function AiTutor({ isOpen, onClose, lessonContext }: AiTutorProps
 		const text = input.trim()
 		if (!text || loading) return
 
-		const newMessages: Message[] = [...messages, { role: 'user', content: text }]
+		const newMessages: Message[] = [
+			...messages,
+			{ role: 'user', content: text },
+		]
 		setMessages(newMessages)
 		setInput('')
 		setLoading(true)
@@ -56,11 +63,16 @@ export default function AiTutor({ isOpen, onClose, lessonContext }: AiTutorProps
 			const data = await res.json()
 
 			if (!res.ok || data.error) {
-				setError(data.error ?? 'Something went wrong. Please try again.')
+				setError(
+					data.error ?? 'Something went wrong. Please try again.',
+				)
 				// Remove the user message on error so they can retry
 				setMessages(messages)
 			} else {
-				setMessages([...newMessages, { role: 'assistant', content: data.text }])
+				setMessages([
+					...newMessages,
+					{ role: 'assistant', content: data.text },
+				])
 			}
 		} catch (e) {
 			setError('Network error. Check your connection and try again.')
@@ -85,15 +97,15 @@ export default function AiTutor({ isOpen, onClose, lessonContext }: AiTutorProps
 
 	const suggestedQuestions = lessonContext
 		? [
-			`What is the most important concept in ${lessonContext}?`,
-			'Can you give me a real-world example?',
-			'What should I study next?',
-		]
+				`What is the most important concept in ${lessonContext}?`,
+				'Can you give me a real-world example?',
+				'What should I study next?',
+			]
 		: [
-			'What is ethical hacking?',
-			'How do I get started in cybersecurity?',
-			'What tools should I learn first?',
-		]
+				'What is ethical hacking?',
+				'How do I get started in cybersecurity?',
+				'What tools should I learn first?',
+			]
 
 	return (
 		<AnimatePresence>
@@ -113,7 +125,11 @@ export default function AiTutor({ isOpen, onClose, lessonContext }: AiTutorProps
 						initial={{ opacity: 0, x: 400 }}
 						animate={{ opacity: 1, x: 0 }}
 						exit={{ opacity: 0, x: 400 }}
-						transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+						transition={{
+							type: 'spring',
+							damping: 28,
+							stiffness: 280,
+						}}
 						className="fixed right-0 top-0 h-full w-full max-w-sm bg-slate-900 border-l border-slate-800 shadow-2xl z-50 flex flex-col"
 					>
 						{/* Header */}
@@ -123,7 +139,9 @@ export default function AiTutor({ isOpen, onClose, lessonContext }: AiTutorProps
 									<Sparkles className="w-4 h-4 text-white" />
 								</div>
 								<div>
-									<p className="text-sm font-bold text-white">AI Tutor</p>
+									<p className="text-sm font-bold text-white">
+										AI Tutor
+									</p>
 									{lessonContext && (
 										<p className="text-[10px] text-slate-500 truncate max-w-[180px]">
 											{lessonContext}
@@ -158,7 +176,9 @@ export default function AiTutor({ isOpen, onClose, lessonContext }: AiTutorProps
 										<div className="w-14 h-14 bg-emerald-600/15 rounded-2xl flex items-center justify-center mx-auto mb-3">
 											<Bot className="w-7 h-7 text-emerald-400" />
 										</div>
-										<p className="text-sm font-bold text-white">Ask me anything</p>
+										<p className="text-sm font-bold text-white">
+											Ask me anything
+										</p>
 										<p className="text-xs text-slate-500 mt-1">
 											{lessonContext
 												? `I'm here to help with "${lessonContext}" and any cybersecurity questions.`
@@ -177,7 +197,7 @@ export default function AiTutor({ isOpen, onClose, lessonContext }: AiTutorProps
 													setInput(q)
 													inputRef.current?.focus()
 												}}
-												className="w-full text-left text-xs text-slate-300 bg-slate-800/60 border border-slate-700 rounded-xl px-3 py-2.5 hover:border-emerald-500/50 hover:bg-slate-800 transition-all"
+												className="w-full text-left text-xs text-slate-400 bg-slate-800/50 border border-slate-700 rounded-xl px-3 py-2.5 hover:border-emerald-500/50 hover:bg-slate-800 transition-all"
 											>
 												{q}
 											</button>
@@ -195,10 +215,11 @@ export default function AiTutor({ isOpen, onClose, lessonContext }: AiTutorProps
 								>
 									{/* Avatar */}
 									<div
-										className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${msg.role === 'assistant'
+										className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+											msg.role === 'assistant'
 												? 'bg-emerald-600/20 border border-emerald-500/30'
 												: 'bg-slate-700 border border-slate-600'
-											}`}
+										}`}
 									>
 										{msg.role === 'assistant' ? (
 											<Bot className="w-3.5 h-3.5 text-emerald-400" />
@@ -209,10 +230,11 @@ export default function AiTutor({ isOpen, onClose, lessonContext }: AiTutorProps
 
 									{/* Bubble */}
 									<div
-										className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'assistant'
+										className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+											msg.role === 'assistant'
 												? 'bg-slate-800 text-slate-200 rounded-tl-sm'
 												: 'bg-emerald-600 text-white rounded-tr-sm'
-											}`}
+										}`}
 									>
 										{msg.content}
 									</div>
@@ -233,8 +255,15 @@ export default function AiTutor({ isOpen, onClose, lessonContext }: AiTutorProps
 										{[0, 1, 2].map((i) => (
 											<motion.div
 												key={i}
-												animate={{ scale: [1, 1.4, 1], opacity: [0.4, 1, 0.4] }}
-												transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
+												animate={{
+													scale: [1, 1.4, 1],
+													opacity: [0.4, 1, 0.4],
+												}}
+												transition={{
+													duration: 0.8,
+													repeat: Infinity,
+													delay: i * 0.15,
+												}}
 												className="w-1.5 h-1.5 bg-emerald-400 rounded-full"
 											/>
 										))}
@@ -291,4 +320,3 @@ export default function AiTutor({ isOpen, onClose, lessonContext }: AiTutorProps
 		</AnimatePresence>
 	)
 }
-
