@@ -1,4 +1,4 @@
-import { BookOpen, Clock, Star, GraduationCap } from 'lucide-react'
+import { BookOpen, Clock, GraduationCap } from 'lucide-react'
 import { Await, redirect } from 'react-router'
 import { userContext } from '~/context'
 import type { Route } from './+types/Dashboard'
@@ -16,15 +16,15 @@ import RecommendedCourseFallback from '~/components/fallbacks/RecommendedCourseF
 import { getSession } from '~/.server/auth/sessions'
 // import { delay } from 'utils'
 
-export const handle = {
-}
+export const handle = {}
 
 export async function loader({ request, context }: Route.LoaderArgs) {
 	const session = await getSession(request.headers.get('Cookie'))
 	if (!session.has('userId')) redirect('/login')
 
 	const user = context.get(userContext)
-	if (user === null) throw new NoUserContextError('User context resolved to null.')
+	if (user === null)
+		throw new NoUserContextError('User context resolved to null.')
 
 	// let courses = delay(2000).then(() => getDashboardData(user.id))
 	const userId = parseInt(session.get('userId')!)
@@ -39,27 +39,41 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
 	let { courses } = loaderData
 
 	return (
-		<div className="space-y-10">
-			<section className="grid grid-cols-4 gap-4">
-				<StatCard label="Courses in Progress"
-					value={courses.then(cs => cs.filter(c => c.completed === false).length)}
-					icon={BookOpen} color="text-blue-400" bg="bg-blue-400/10" />
+		<div className="space-y-8">
+			<section className="grid grid-cols-3 gap-3">
+				<StatCard
+					label="Courses in Progress"
+					value={courses.then(
+						(cs) => cs.filter((c) => c.completed === false).length,
+					)}
+					icon={BookOpen}
+					color="text-blue-400"
+				/>
 
-				<StatCard label="Completed Courses"
-					value={courses.then(cs => cs.filter(c => c.completed === true).length)}
-					icon={GraduationCap} color="text-emerald-400" bg="bg-emerald-400/10" />
+				<StatCard
+					label="Completed Courses"
+					value={courses.then(
+						(cs) => cs.filter((c) => c.completed === true).length,
+					)}
+					icon={GraduationCap}
+					color="text-emerald-400"
+				/>
 
-				<StatCard label="Total learning hours"
-					value={courses.then(cs => cs.reduce((acc, c) => c.completed ? acc + c.length : acc, 0))}
-					icon={Clock} color="text-amber-400" bg="bg-amber-400/10" />
-
-				<StatCard label="Achievement Points"
-					value="2,450"
-					icon={Star} color="text-purple-400" bg="bg-purple-400/10" />
+				<StatCard
+					label="Total learning hours"
+					value={courses.then((cs) =>
+						cs.reduce(
+							(acc, c) => (c.completed ? acc + c.length : acc),
+							0,
+						),
+					)}
+					icon={Clock}
+					color="text-amber-400"
+				/>
 			</section>
 
 			<section>
-				<h2 className="text-xl font-semibold text-white mb-6">
+				<h2 className="text-lg font-semibold text-white mb-4">
 					Continue Learning
 				</h2>
 				<React.Suspense fallback={<ContinueLearningFallback />}>
@@ -70,15 +84,17 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
 			</section>
 
 			<section>
-				<h2 className="text-xl font-semibold text-white mb-6">
+				<h2 className="text-lg font-semibold text-white mb-4">
 					Recommended for you
 				</h2>
 				<React.Suspense fallback={<RecommendedCourseFallback />}>
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 						<Await resolve={courses}>
-							{(courses: DashboardData[]) => (courses.map((c) => (
-								<RecommendedCourseCard course={c} />
-							)))}
+							{(courses: DashboardData[]) =>
+								courses.map((c) => (
+									<RecommendedCourseCard course={c} />
+								))
+							}
 						</Await>
 					</div>
 				</React.Suspense>

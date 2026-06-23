@@ -15,37 +15,33 @@ export default function RecommendedCourseCard({
 		<Link
 			key={course.id}
 			to={`/course/${course.id}`}
-			className="group bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
+			className="group flex gap-3 p-3 border border-slate-800 rounded-xl hover:border-slate-700 transition-colors"
 		>
-			<div className="aspect-video overflow-hidden">
+			<div className="w-20 h-14 shrink-0 rounded-lg overflow-hidden">
 				<img
 					src={course.thumbnail}
 					alt={course.title}
-					className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+					className="w-full h-full object-cover"
 					referrerPolicy="no-referrer"
 				/>
 			</div>
-			<div className="p-5 space-y-3">
-				<div className="flex items-center justify-between">
+			<div className="min-w-0 flex-1">
+				<div className="flex items-center gap-2 mb-0.5">
 					<span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
 						{course.category}
 					</span>
-					<div className="flex items-center gap-1 text-xs text-slate-400">
-						<Clock className="w-3 h-3" />
+					<div className="flex items-center gap-1 text-[10px] text-slate-500">
+						<Clock className="w-2.5 h-2.5" />
 						{formatCourseLength(course.length)}
 					</div>
 				</div>
-				<h3 className="font-bold text-white group-hover:text-emerald-400 transition-colors">
+				<h3 className="text-sm font-bold text-white truncate group-hover:text-emerald-400 transition-colors">
 					{course.title}
 				</h3>
-				<div className="flex items-center justify-between pt-2 border-t border-slate-800">
-					<p className="text-xs text-slate-500">
-						By {course.instructor}
-					</p>
-					<p className="text-xs font-bold text-slate-300">
-						{course.lessonsCount} lessons
-					</p>
-				</div>
+				<p className="text-[11px] text-slate-500 mt-0.5">
+					By {course.instructor} &middot; {course.lessonsCount}{' '}
+					lessons
+				</p>
 			</div>
 		</Link>
 	)

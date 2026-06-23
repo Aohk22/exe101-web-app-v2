@@ -81,123 +81,104 @@ function CoursesInner({
 
 	return (
 		<div className="space-y-8">
-			<div className="flex justify-end">
-				<div className="flex items-center gap-2">
-					<div className="relative">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-						<input
-							type="text"
-							value={searchQuery}
-							onChange={(event) =>
-								setSearchQuery(event.target.value)
-							}
-							placeholder="Search courses..."
-							className="pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white focus:ring-2 focus:ring-emerald-500/10 focus:border-slate-700 outline-none transition-all w-full md:w-64"
-						/>
-					</div>
+			<div className="flex flex-wrap items-center gap-3 p-3 border border-slate-800 rounded-xl">
+				<div className="relative min-w-0 flex-1">
+					<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+					<input
+						type="text"
+						value={searchQuery}
+						onChange={(event) => setSearchQuery(event.target.value)}
+						placeholder="Search courses..."
+						className="pl-9 pr-3 py-1.5 bg-transparent text-sm text-white placeholder-slate-500 outline-none w-full"
+					/>
 				</div>
-			</div>
 
-			{/* Categories */}
-			<div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-				<Link
-					to="/courses"
-					className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-						activeCategory === 'all'
-							? 'bg-slate-800 text-white border border-slate-700'
-							: 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-200'
-					}`}
-				>
-					All Courses
-				</Link>
-				{categories.map((cat) => (
+				<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
 					<Link
-						key={cat.id}
-						to={`?cat=${cat.name}`}
-						className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-							activeCategory === cat.name
-								? 'bg-slate-800 text-white border border-slate-700'
-								: 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-200'
+						to="/courses"
+						className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+							activeCategory === 'all'
+								? 'bg-slate-700 text-white'
+								: 'text-slate-400 hover:text-slate-200'
 						}`}
 					>
-						{cat.name}
+						All
 					</Link>
-				))}
+					{categories.map((cat) => (
+						<Link
+							key={cat.id}
+							to={`?cat=${cat.name}`}
+							className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+								activeCategory === cat.name
+									? 'bg-slate-700 text-white'
+									: 'text-slate-400 hover:text-slate-200'
+							}`}
+						>
+							{cat.name}
+						</Link>
+					))}
+				</div>
 			</div>
 
 			{/* Course Grid */}
 			{filteredCourses.length > 0 ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+				<div className="space-y-2">
 					{filteredCourses.map((course) => {
 						return (
 							<Link
 								key={course.id}
 								to={`/courses/${course.id}`}
-								className="group flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 transition-colors duration-300"
+								className="group flex items-center gap-4 p-3 border border-slate-800 rounded-xl hover:border-slate-700 transition-colors"
 							>
-								<div className="aspect-[16/10] overflow-hidden relative">
-									<img
-										src={course.thumbnail}
-										alt={course.title}
-										className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-										referrerPolicy="no-referrer"
-									/>
-									<div className="absolute top-4 left-4">
-										<span className="bg-slate-900/90 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-lg">
+								<div className="min-w-0 flex-1">
+									<div className="flex items-center gap-2 text-[11px] text-slate-500">
+										<span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
 											{course.category}
 										</span>
-									</div>
-								</div>
-
-								<div className="p-6 flex-1 flex flex-col">
-									<div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
+										<span>&middot;</span>
 										<div className="flex items-center gap-1">
 											<Clock className="w-3 h-3" />
 											{formatCourseLength(course.length)}
 										</div>
-										<div className="w-1 h-1 bg-slate-700 rounded-full"></div>
+										<span>&middot;</span>
 										<div className="flex items-center gap-1">
 											<BookOpen className="w-3 h-3" />
 											{course.lessons_count} lessons
 										</div>
 									</div>
-
-									<h3 className="text-lg font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">
+									<h3 className="text-sm font-bold text-white truncate group-hover:text-emerald-400 transition-colors">
 										{course.title}
 									</h3>
-
-									<p className="text-sm text-slate-400 line-clamp-2 mb-6">
+									<p className="text-xs text-slate-400 truncate">
 										{course.description}
 									</p>
+								</div>
 
-									<div className="mt-auto pt-4 border-t border-slate-800 flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
-												<img
-													src={`https://ui-avatars.com/api/?name=${course.instructor}&background=random`}
-													alt={course.instructor}
-													className="w-full h-full object-cover"
-												/>
-											</div>
-											<span className="text-xs text-slate-400 font-medium">
-												{course.instructor}
-											</span>
+								<div className="hidden sm:flex items-center gap-3 shrink-0">
+									<div className="flex items-center gap-1.5">
+										<div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center overflow-hidden">
+											<img
+												src={`https://ui-avatars.com/api/?name=${course.instructor}&background=random`}
+												alt={course.instructor}
+												className="w-full h-full object-cover"
+											/>
 										</div>
-										<div className="text-slate-500 group-hover:text-slate-300 transition-colors">
-											<ChevronRight className="w-5 h-5" />
-										</div>
+										<span className="text-xs text-slate-400 whitespace-nowrap">
+											{course.instructor}
+										</span>
 									</div>
+									<ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-300 transition-colors" />
 								</div>
 							</Link>
 						)
 					})}
 				</div>
 			) : (
-				<div className="rounded-xl border border-dashed border-slate-800 bg-slate-900/50 px-6 py-12 text-center">
-					<h2 className="text-lg font-bold text-white">
+				<div className="border border-dashed border-slate-800 rounded-xl px-6 py-10 text-center">
+					<h2 className="text-base font-bold text-white">
 						No courses found
 					</h2>
-					<p className="mt-2 text-sm text-slate-400">
+					<p className="mt-1 text-sm text-slate-400">
 						Try a different search term
 						{activeCategory !== 'all'
 							? ` in ${activeCategory}`
@@ -213,36 +194,31 @@ function CoursesInner({
 function CoursesSkeleton() {
 	return (
 		<div className="space-y-8">
-			<div className="flex justify-end">
-				<div className="h-10 w-64 bg-slate-800 rounded-xl animate-pulse" />
+			<div className="flex gap-3 p-3 border border-slate-800 rounded-xl animate-pulse">
+				<div className="h-7 flex-1 bg-slate-800 rounded" />
+				<div className="flex gap-1.5">
+					{[1, 2, 3, 4].map((i) => (
+						<div
+							key={i}
+							className="h-7 w-14 bg-slate-800 rounded-lg"
+						/>
+					))}
+				</div>
 			</div>
-			<div className="flex items-center gap-2 pb-2">
-				{[1, 2, 3, 4].map((i) => (
-					<div
-						key={i}
-						className="h-9 w-28 bg-slate-800 rounded-full animate-pulse"
-					/>
-				))}
-			</div>
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+			<div className="space-y-2">
 				{[1, 2, 3, 4, 5, 6].map((i) => (
 					<div
 						key={i}
-						className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden animate-pulse"
+						className="flex gap-3 p-3 border border-slate-800 rounded-xl animate-pulse"
 					>
-						<div className="aspect-[16/10] bg-slate-800" />
-						<div className="p-6 space-y-3">
-							<div className="flex gap-2">
+						<div className="flex-1 space-y-2 py-1">
+							<div className="flex gap-3">
 								<div className="h-3 w-16 bg-slate-800 rounded" />
-								<div className="h-3 w-20 bg-slate-800 rounded" />
+								<div className="h-3 w-12 bg-slate-800 rounded" />
+								<div className="h-3 w-14 bg-slate-800 rounded" />
 							</div>
-							<div className="h-5 w-3/4 bg-slate-800 rounded" />
-							<div className="h-4 w-full bg-slate-800 rounded" />
-							<div className="h-4 w-2/3 bg-slate-800 rounded" />
-							<div className="pt-4 border-t border-slate-800 flex justify-between">
-								<div className="h-4 w-24 bg-slate-800 rounded" />
-								<div className="h-4 w-4 bg-slate-800 rounded" />
-							</div>
+							<div className="h-4 w-3/4 bg-slate-800 rounded" />
+							<div className="h-3 w-1/2 bg-slate-800 rounded" />
 						</div>
 					</div>
 				))}
