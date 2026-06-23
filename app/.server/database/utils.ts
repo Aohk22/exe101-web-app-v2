@@ -27,6 +27,16 @@ export const courseWithProgressSchema = courseWithLessonCountSchema.extend({
 export type CourseWithLessonCount = z.infer<typeof courseWithLessonCountSchema>
 export type CourseWithProgress = z.infer<typeof courseWithProgressSchema>
 
+export async function updateUser(
+	userId: number,
+	data: { name?: string; email?: string },
+): Promise<User> {
+	const res = await db.execute(
+		sql`UPDATE users SET name = ${data.name}, email = ${data.email} WHERE id = ${userId} RETURNING *`,
+	)
+	return userSchema.parse(res.rows[0])
+}
+
 export async function getUserById(userId: string): Promise<User | null> {
 	const res = await db.execute(
 		sql`SELECT u.* FROM users u WHERE u.id = ${userId} LIMIT 1`,
