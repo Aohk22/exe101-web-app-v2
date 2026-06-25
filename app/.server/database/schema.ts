@@ -153,3 +153,14 @@ export const pathCourses = pgTable(
 		unique().on(t.pathId, t.position),
 	],
 )
+
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	userId: integer('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	token: varchar({ length: 255 }).notNull().unique(),
+	expiresAt: timestamp('expires_at').notNull(),
+	usedAt: timestamp('used_at'),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+})

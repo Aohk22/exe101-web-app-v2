@@ -11,6 +11,7 @@ import {
 	challengeSubmissions,
 	learningPaths,
 	pathCourses,
+	passwordResetTokens,
 } from './schema'
 import { z } from 'zod'
 
@@ -38,6 +39,7 @@ export const challengeOptionSchema = createSelectSchema(challengeOptions)
 export const challengeSubmissionSchema =
 	createSelectSchema(challengeSubmissions)
 export const learningPathSchema = createSelectSchema(learningPaths)
+export const passwordResetTokenSchema = createSelectSchema(passwordResetTokens)
 export const pathCourseSchema = createSelectSchema(pathCourses)
 
 export const learningPathWithCountSchema = learningPathSchema.extend({

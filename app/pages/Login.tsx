@@ -1,8 +1,22 @@
 import z from 'zod'
 import { motion } from 'motion/react'
-import { GraduationCap, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
-import { ChromeIcon, GithubIcon } from '~/components/icons/icons'
-import { Form, Link, redirect, useNavigation } from 'react-router'
+import {
+	GraduationCap,
+	Mail,
+	Lock,
+	ArrowRight,
+	Loader2,
+	CheckCircle2,
+} from 'lucide-react'
+import ChromeIcon from '~/components/icons/ChromeIcon'
+import GithubIcon from '~/components/icons/GithubIcon'
+import {
+	Form,
+	Link,
+	redirect,
+	useNavigation,
+	useSearchParams,
+} from 'react-router'
 import { getSession, commitSession } from '~/.server/auth/sessions'
 import { validateCredentials } from '~/.server/auth/login'
 import type { Route } from './+types/Login'
@@ -56,6 +70,8 @@ export default function Login({ actionData }: Route.ComponentProps) {
 	const error: string = actionData ? actionData.error : ''
 	const navigation = useNavigation()
 	const isLoading = navigation.state === 'submitting'
+	const [searchParams] = useSearchParams()
+	const resetSuccess = searchParams.get('reset') === 'success'
 
 	return (
 		<div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-slate-200">
@@ -80,6 +96,14 @@ export default function Login({ actionData }: Route.ComponentProps) {
 
 				{/* Login Card */}
 				<div className="bg-slate-900 rounded-xl shadow-2xl shadow-black/50 border border-slate-800 p-8 md:p-12">
+					{resetSuccess && (
+						<div className="mb-6 flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 text-xs text-emerald-400">
+							<CheckCircle2 className="w-4 h-4 shrink-0" />
+							Password reset successful. Sign in with your new
+							password.
+						</div>
+					)}
+
 					<div className="mb-8">
 						<h2 className="text-2xl font-bold text-white">
 							Welcome Back

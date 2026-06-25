@@ -173,6 +173,49 @@ export async function getCourseLessonCount(courseId: number): Promise<number> {
 	return z.number().parse(result.rows[0])
 }
 
-export async function sync(userId: string) {
-	throw new Error('Unimplemented')
+export async function updatePassword(
+	userId: number,
+	currentPassword: string,
+	newPassword: string,
+): Promise<{ ok: boolean; error?: string }> {
+	const bcrypt = await import('bcrypt')
+
+	const userRes = await db.execute(
+		sql`SELECT password FROM users WHERE id = ${userId}`,
+	)
+	const user = userRes.rows[0] as { password: string } | undefined
+	if (!user) {
+		return { ok: false, error: 'User not found.' }
+	}
+
+	const valid = await bcrypt.compare(currentPassword, user.password)
+	if (!valid) {
+		return { ok: false, error: 'Current password is incorrect.' }
+	}
+
+	const hashed = await bcrypt.hash(newPassword, 10)
+	await db.execute(
+		sql`UPDATE users SET password = ${hashed} WHERE id = ${userId}`,
+	)
+	return { ok: true }
+}
+
+export async function getUserByEmail(email: string) {
+	const res = await db.execute(
+		sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`,
+	)
+	const user = z.safeParse(userSchema, res.rows[0])
+	return user.success ? user.data : null
+}
+
+export async function getUserByIdOrEmail(userId: number | string) {
+	const where =
+		typeof userId === 'number'
+			? sql`u.id = ${userId}`
+			: sql`u.email = ${userId}`
+	const res = await db.execute(
+		sql`SELECT u.* FROM users u WHERE ${where} LIMIT 1`,
+	)
+	const user = z.safeParse(userSchema, res.rows[0])
+	return user.success ? user.data : null
 }

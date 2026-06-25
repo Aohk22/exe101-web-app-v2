@@ -8,7 +8,9 @@ import {
 export default [
 	route('login', './pages/Login.tsx'),
 	route('register', './pages/Register.tsx'),
-	route('regsitraion-success', './pages/RegisterSuccess.tsx'),
+	route('registration-success', './pages/RegisterSuccess.tsx'),
+	route('forgot-password', './pages/ForgotPassword.tsx'),
+	route('reset-password', './pages/ResetPassword.tsx'),
 
 	route('course-builder/:courseId/export', './routes/CourseExport.ts'),
 
