@@ -19,7 +19,7 @@ import {
 	ChevronRight,
 } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import PricingModal from '~/components/PricingModal'
 import type { User } from '~/.server/database/types'
 import AiTutor from '~/components/AiTutor'
@@ -46,7 +46,6 @@ export default function MainLayout() {
 	const [isPricingOpen, setIsPricingOpen] = useState(false)
 	const [aiOpen, setAiOpen] = useState(false)
 	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-	const [sidebarWidth, setSidebarWidth] = useState(256)
 	const [adminOpen, setAdminOpen] = useState(() => {
 		const path = location.pathname
 		return path.startsWith('/admin') || path.startsWith('/course-builder')
@@ -57,10 +56,6 @@ export default function MainLayout() {
 			return (el.dataset.theme as 'light' | 'dark') || 'dark'
 		}
 		return 'dark'
-	})
-	const resizeStateRef = useRef({
-		isResizing: false,
-		lastExpandedWidth: 256,
 	})
 	const currentUser = matches
 		.map((match) => {
@@ -95,52 +90,6 @@ export default function MainLayout() {
 		document.documentElement.style.colorScheme = nextTheme
 	}, [])
 
-	useEffect(() => {
-		function handleMouseMove(event: MouseEvent) {
-			if (!resizeStateRef.current.isResizing) {
-				return
-			}
-
-			const collapseThreshold = 170
-			const minExpandedWidth = 220
-			const maxExpandedWidth = 420
-
-			if (event.clientX < collapseThreshold) {
-				setIsSidebarCollapsed(true)
-				return
-			}
-
-			const nextWidth = Math.min(
-				Math.max(event.clientX, minExpandedWidth),
-				maxExpandedWidth,
-			)
-
-			resizeStateRef.current.lastExpandedWidth = nextWidth
-			setSidebarWidth(nextWidth)
-			setIsSidebarCollapsed(false)
-		}
-
-		function handleMouseUp() {
-			resizeStateRef.current.isResizing = false
-			document.body.style.userSelect = ''
-			document.body.style.cursor = ''
-		}
-
-		window.addEventListener('mousemove', handleMouseMove)
-		window.addEventListener('mouseup', handleMouseUp)
-
-		return () => {
-			window.removeEventListener('mousemove', handleMouseMove)
-			window.removeEventListener('mouseup', handleMouseUp)
-		}
-	}, [])
-
-	function startResize() {
-		resizeStateRef.current.isResizing = true
-		document.body.style.userSelect = 'none'
-		document.body.style.cursor = 'col-resize'
-	}
-
 	function toggleTheme() {
 		const nextTheme = theme === 'dark' ? 'light' : 'dark'
 		setTheme(nextTheme)
@@ -153,8 +102,7 @@ export default function MainLayout() {
 		<div className="flex min-h-screen bg-slate-950 text-slate-200 transition-colors">
 			{/* Sidebar */}
 			<aside
-				className="border-r border-slate-800 bg-slate-900 hidden md:flex flex-col sticky top-0 h-screen relative shrink-0"
-				style={{ width: isSidebarCollapsed ? 88 : sidebarWidth }}
+				className={`border-r border-slate-800 bg-slate-900 hidden md:flex flex-col sticky top-0 h-screen relative shrink-0 ${isSidebarCollapsed ? 'w-[88px]' : 'w-fit'}`}
 			>
 				<div className="p-6">
 					<div className="flex items-center justify-center">
@@ -296,14 +244,7 @@ export default function MainLayout() {
 					)}
 				</nav>
 
-				<div
-					role="separator"
-					aria-orientation="vertical"
-					aria-label="Resize sidebar"
-					onMouseDown={startResize}
-					className="absolute top-0 right-0 h-full w-2 cursor-col-resize bg-transparent hover:bg-emerald-500/15"
-				/>
-			</aside>
+				</aside>
 
 			{/* Main Content */}
 			<main className="flex-1 flex flex-col min-w-0">

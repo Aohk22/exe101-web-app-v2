@@ -17,6 +17,8 @@ import {
 } from '~/.server/queries/challenge'
 import type { ChallengeQuestionWithOptions } from '~/.server/queries/challenge'
 import { z } from 'zod'
+import { db } from '~/.server/database/connection'
+import { usersToCourses } from '~/.server/database/schema'
 
 export async function loader({ context, params }: Route.LoaderArgs) {
 	const user = context.get(userContext)
@@ -30,6 +32,12 @@ export async function loader({ context, params }: Route.LoaderArgs) {
 	if (isNaN(courseId) || isNaN(lessonId) || userId == null) {
 		throw new Error('Invalid path parameter')
 	}
+
+	// Auto-enroll so the user can access lessons
+	await db
+		.insert(usersToCourses)
+		.values({ userId, courseId })
+		.onConflictDoNothing()
 
 	return {
 		dataPromise: getLessonPageData({ courseId, lessonId, userId }),

@@ -10,6 +10,8 @@ export default [
 	route('register', './pages/Register.tsx'),
 	route('regsitraion-success', './pages/RegisterSuccess.tsx'),
 
+	route('course-builder/:courseId/export', './routes/CourseExport.ts'),
+
 	layout('./routes/protected.tsx', [
 		layout('./layouts/MainLayout.tsx', [
 			layout('./layouts/SectionLayout.tsx', [

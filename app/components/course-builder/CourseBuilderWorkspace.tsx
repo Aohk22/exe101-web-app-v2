@@ -1,6 +1,6 @@
-import { Save, BookOpen } from 'lucide-react'
-import { Form, useNavigate, useNavigation } from 'react-router'
-import { useState } from 'react'
+import { Save, BookOpen, Download, Upload, Trash2 } from 'lucide-react'
+import { Form, Link, useNavigate, useNavigation, useSubmit } from 'react-router'
+import { useRef, useState } from 'react'
 import type { Category } from '~/.server/database/types'
 import CourseDetailsForm from './CourseDetailsForm'
 import CourseTreeView from './CourseTreeView'
@@ -26,13 +26,26 @@ function createClientId(prefix: string) {
 function toLessonDraft(
 	lesson: CurriculumModule['lessons'][number],
 ): LessonDraft {
+	const rawQuestions: any[] = (lesson as any).challengeQuestions ?? []
 	return {
 		clientId: `lesson-${lesson.id}`,
 		id: lesson.id,
 		title: lesson.title,
 		length: lesson.length,
 		contentMd: lesson.contentMd,
-		challengeQuestions: (lesson as any).challengeQuestions ?? [],
+		challengeQuestions: rawQuestions.map((q) => ({
+			clientId: `chq-${q.id}`,
+			id: q.id,
+			questionText: q.questionText,
+			type: q.type,
+			correctAnswer: q.correctAnswer ?? '',
+			options: (q.options ?? []).map((o: any) => ({
+				clientId: `cho-${o.id}`,
+				id: o.id,
+				optionText: o.optionText,
+				isCorrect: o.isCorrect,
+			})),
+		})),
 	}
 }
 
@@ -78,6 +91,8 @@ export default function CourseBuilderWorkspace({
 }: CourseBuilderWorkspaceProps) {
 	const navigate = useNavigate()
 	const navigation = useNavigation()
+	const submit = useSubmit()
+	const importFileRef = useRef<HTMLInputElement>(null)
 	const [draft, setDraft] = useState(() =>
 		buildInitialDraft(selectedCourse, curriculum, null),
 	)
@@ -241,6 +256,39 @@ export default function CourseBuilderWorkspace({
 		}
 	}
 
+	function handleImportClick() {
+		importFileRef.current?.click()
+	}
+
+	function handleImportFileChange(
+		e: React.ChangeEvent<HTMLInputElement>,
+	) {
+		const file = e.target.files?.[0]
+		if (!file) return
+		const reader = new FileReader()
+		reader.onload = () => {
+			submit(
+				{
+					intent: 'import-course',
+					importJson: reader.result as string,
+				},
+				{ method: 'post' },
+			)
+		}
+		reader.readAsText(file)
+		e.target.value = ''
+	}
+
+	function handleRemoveCourse() {
+		const courseId = selectedCourse?.id ?? draft.id
+		if (courseId == null) return
+		if (!window.confirm('Remove this course permanently? This cannot be undone.')) return
+		submit(
+			{ intent: 'delete-course', courseId: String(courseId) },
+			{ method: 'post' },
+		)
+	}
+
 	const totalLessons = draft.modules.reduce(
 		(total, m) => total + m.lessons.length,
 		0,
@@ -301,6 +349,46 @@ export default function CourseBuilderWorkspace({
 						{draft.modules.length !== 1 ? 's' : ''}, {totalLessons}{' '}
 						lesson{totalLessons !== 1 ? 's' : ''}
 					</div>
+
+					{/* Import / Export */}
+					<div className="flex gap-2">
+						{selectedCourse != null ? (
+							<Link
+								to={`/course-builder/${selectedCourse.id}/export`}
+								className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-800"
+							>
+								<Download className="h-3.5 w-3.5" />
+								Export
+							</Link>
+						) : null}
+						<button
+							type="button"
+							onClick={handleImportClick}
+							className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:bg-slate-800"
+						>
+							<Upload className="h-3.5 w-3.5" />
+							Import
+						</button>
+					</div>
+					<input
+						ref={importFileRef}
+						type="file"
+						accept=".json"
+						onChange={handleImportFileChange}
+						className="hidden"
+					/>
+
+					{/* Remove course */}
+					{selectedCourse != null ? (
+						<button
+							type="button"
+							onClick={handleRemoveCourse}
+							className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-rose-800/50 bg-rose-950/30 px-3 py-2 text-xs font-semibold text-rose-400 transition-colors hover:bg-rose-950/50"
+						>
+							<Trash2 className="h-3.5 w-3.5" />
+							Remove Course
+						</button>
+					) : null}
 
 					{/* Save */}
 					<button

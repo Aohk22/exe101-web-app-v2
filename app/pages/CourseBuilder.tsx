@@ -1,4 +1,4 @@
-import { asc, desc, eq } from 'drizzle-orm'
+import { asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { CheckCircle2, Plus } from 'lucide-react'
 import {
 	Await,
@@ -27,6 +27,11 @@ import {
 	modules,
 	challengeQuestions,
 	challengeOptions,
+	challengeSubmissions,
+	pathCourses,
+	usersToLessons,
+	usersToCourses,
+	reviews,
 } from '~/.server/database/schema'
 import type { Category, User } from '~/.server/database/types'
 import { getCategories } from '~/.server/database/utils'
@@ -190,6 +195,52 @@ async function getCourseCurriculum(
 		.where(eq(modules.courseId, courseId))
 		.orderBy(asc(modules.id), asc(lessons.id))
 
+	const lessonIds = rows
+		.map((r) => r.lessonId)
+		.filter((id): id is number => id != null)
+
+	const questions =
+		lessonIds.length > 0
+			? await db
+					.select()
+					.from(challengeQuestions)
+					.where(inArray(challengeQuestions.lessonId, lessonIds))
+					.orderBy(asc(challengeQuestions.orderIndex))
+			: []
+
+	const questionIds = questions.map((q) => q.id)
+
+	const options =
+		questionIds.length > 0
+			? await db
+					.select()
+					.from(challengeOptions)
+					.where(inArray(challengeOptions.questionId, questionIds))
+					.orderBy(asc(challengeOptions.orderIndex))
+			: []
+
+	const optionsByQuestion = new Map<
+		number,
+		(typeof challengeOptions.$inferSelect)[]
+	>()
+	for (const opt of options) {
+		const list = optionsByQuestion.get(opt.questionId) ?? []
+		list.push(opt)
+		optionsByQuestion.set(opt.questionId, list)
+	}
+
+	const questionsByLesson = new Map<
+		number,
+		(typeof challengeQuestions.$inferSelect & {
+			options: (typeof challengeOptions.$inferSelect)[]
+		})[]
+	>()
+	for (const q of questions) {
+		const list = questionsByLesson.get(q.lessonId) ?? []
+		list.push({ ...q, options: optionsByQuestion.get(q.id) ?? [] })
+		questionsByLesson.set(q.lessonId, list)
+	}
+
 	const groupedModules = new Map<number, CurriculumModule>()
 
 	for (const row of rows) {
@@ -215,7 +266,9 @@ async function getCourseCurriculum(
 				length: row.lessonLength,
 				contentMd: row.lessonContentMd,
 				moduleId: row.lessonModuleId,
-			})
+				challengeQuestions:
+					questionsByLesson.get(row.lessonId) ?? [],
+			} as any)
 		}
 	}
 
@@ -294,11 +347,200 @@ async function loadBuilderData(
 	}
 }
 
+const importOptionSchema = z.object({
+	optionText: z.string(),
+	isCorrect: z.boolean(),
+})
+
+const importQuestionSchema = z.object({
+	questionText: z.string(),
+	type: z.enum(['multiple_choice', 'flag']),
+	correctAnswer: z.string().optional().default(''),
+	options: z.array(importOptionSchema).optional().default([]),
+})
+
+const importLessonSchema = z.object({
+	title: z.string(),
+	length: z.number().int().min(0),
+	contentMd: z.string(),
+	challengeQuestions: z.array(importQuestionSchema).optional().default([]),
+})
+
+const importModuleSchema = z.object({
+	title: z.string(),
+	lessons: z.array(importLessonSchema),
+})
+
+const importCourseSchema = z.object({
+	title: z.string().trim().min(1, 'Title is required'),
+	description: z
+		.string()
+		.trim()
+		.min(1, 'Description is required')
+		.max(255, 'Description must be 255 characters or fewer'),
+	instructor: z.string().trim().min(1, 'Instructor is required'),
+	thumbnail: z.string().trim(),
+	length: z.number().int().min(0),
+	categoryId: z.number().int().positive('Choose a category').nullable(),
+	categoryName: z.string().optional(),
+	modules: z.array(importModuleSchema),
+})
+
 export async function action({ request, context }: Route.ActionArgs) {
 	await requireStaffUser(context)
 
 	const form = await request.formData()
 	const intent = form.get('intent')
+
+	if (intent === 'import-course') {
+		const importJson = form.get('importJson')
+
+		let parsedJson: unknown
+		try {
+			parsedJson =
+				typeof importJson === 'string'
+					? JSON.parse(importJson)
+					: null
+		} catch {
+			return data<ActionResult>(
+				{ error: 'Invalid JSON payload.' },
+				{ status: 400 },
+			)
+		}
+
+		const parsed = importCourseSchema.safeParse(parsedJson)
+		if (!parsed.success) {
+			return data<ActionResult>(
+				{
+					error:
+						parsed.error.issues[0]?.message ??
+						'Invalid course import.',
+				},
+				{ status: 400 },
+			)
+		}
+
+		const importData = parsed.data
+
+		let categoryId = importData.categoryId
+		if (categoryId == null) {
+			if (importData.categoryName) {
+				const catRes = await db.execute<{ id: number }>(sql`
+					SELECT id FROM categories WHERE name = ${importData.categoryName} LIMIT 1
+				`)
+				categoryId = catRes.rows[0]?.id ?? null
+			}
+			if (categoryId == null) {
+				return data<ActionResult>(
+					{
+						error:
+							importData.categoryName
+								? `Category "${importData.categoryName}" not found.`
+								: 'categoryId or categoryName is required in the import file.',
+					},
+					{ status: 400 },
+				)
+			}
+		}
+
+		const courseRes = await db.execute<{ id: number }>(sql`
+			INSERT INTO "courses" (title, description, instructor, thumbnail, length, category_id)
+			VALUES (${importData.title}, ${importData.description}, ${importData.instructor}, ${importData.thumbnail}, ${importData.length}, ${categoryId})
+			RETURNING id
+		`)
+		const newCourseId = courseRes.rows[0].id
+
+		for (const moduleImport of importData.modules) {
+			const moduleRes = await db.execute<{ id: number }>(sql`
+				INSERT INTO "modules" (course_id, title)
+				VALUES (${newCourseId}, ${moduleImport.title.trim() || 'Untitled module'})
+				RETURNING id
+			`)
+			const moduleId = moduleRes.rows[0].id
+
+			for (const lessonImport of moduleImport.lessons) {
+				const lessonRes = await db.execute<{ id: number }>(sql`
+					INSERT INTO "lessons" (module_id, title, length, content_md)
+					VALUES (${moduleId}, ${lessonImport.title.trim() || 'Untitled lesson'}, ${lessonImport.length}, ${lessonImport.contentMd})
+					RETURNING id
+				`)
+				const lessonId = lessonRes.rows[0].id
+
+				for (const qImport of lessonImport.challengeQuestions) {
+					const qRes = await db.execute<{ id: number }>(sql`
+						INSERT INTO "challenge_questions" (lesson_id, question_text, type, correct_answer, order_index)
+						VALUES (${lessonId}, ${qImport.questionText}, ${qImport.type}, ${qImport.type === 'flag' ? qImport.correctAnswer : null}, 0)
+						RETURNING id
+					`)
+					const questionId = qRes.rows[0].id
+
+					if (qImport.type === 'multiple_choice') {
+						for (const opt of qImport.options) {
+							await db.execute(sql`
+								INSERT INTO "challenge_options" (question_id, option_text, is_correct, order_index)
+								VALUES (${questionId}, ${opt.optionText}, ${opt.isCorrect}, 0)
+							`)
+						}
+					}
+				}
+			}
+		}
+
+		return redirect(`/course-builder?courseId=${newCourseId}`)
+	}
+
+	if (intent === 'delete-course') {
+		const courseIdStr = form.get('courseId')
+		const courseId = Number(courseIdStr)
+		if (!Number.isFinite(courseId)) {
+			return data<ActionResult>(
+				{ error: 'Invalid course ID.' },
+				{ status: 400 },
+			)
+		}
+
+		const lessonIds = (
+			await db.execute<{ id: number }>(sql`
+				SELECT l.id FROM lessons l
+				INNER JOIN modules m ON l.module_id = m.id
+				WHERE m.course_id = ${courseId}
+			`)
+		).rows.map((r) => r.id)
+
+		if (lessonIds.length > 0) {
+			await db.delete(challengeSubmissions).where(
+				sql`question_id IN (
+					SELECT id FROM challenge_questions WHERE lesson_id IN (${sql.join(lessonIds.map((id) => sql`${id}`), sql`, `)})
+				)`,
+			)
+			await db.delete(challengeOptions).where(
+				sql`question_id IN (
+					SELECT id FROM challenge_questions WHERE lesson_id IN (${sql.join(lessonIds.map((id) => sql`${id}`), sql`, `)})
+				)`,
+			)
+			await db.delete(challengeQuestions).where(
+				sql`lesson_id IN (${sql.join(lessonIds.map((id) => sql`${id}`), sql`, `)})`,
+			)
+			await db.delete(usersToLessons).where(
+				sql`lesson_id IN (${sql.join(lessonIds.map((id) => sql`${id}`), sql`, `)})`,
+			)
+		}
+
+		await db.delete(pathCourses).where(eq(pathCourses.courseId, courseId))
+		await db.delete(usersToCourses).where(
+			eq(usersToCourses.courseId, courseId),
+		)
+		await db.delete(reviews).where(sql`course_id = ${courseId}`)
+		await db
+			.delete(lessons)
+			.where(
+				sql`module_id IN (SELECT id FROM modules WHERE course_id = ${courseId})`,
+			)
+		await db.delete(modules).where(eq(modules.courseId, courseId))
+		await db.delete(courses).where(eq(courses.id, courseId))
+
+		return redirect('/course-builder')
+	}
 
 	if (intent !== 'save-draft') {
 		return data<ActionResult>(
