@@ -135,12 +135,12 @@ export default function Login({ actionData }: Route.ComponentProps) {
 								<label className="text-sm font-bold text-slate-300">
 									Password
 								</label>
-								<button
-									type="button"
+								<Link
+									to="/forgot-password"
 									className="text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
 								>
 									Forgot Password?
-								</button>
+								</Link>
 							</div>
 							<div className="relative group">
 								<Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
