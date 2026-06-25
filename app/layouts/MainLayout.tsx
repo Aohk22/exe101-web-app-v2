@@ -1,55 +1,54 @@
-import { Outlet, Link, useLocation, useMatches } from 'react-router'
+import {
+	Outlet,
+	Link,
+	useLocation,
+	useMatches,
+	useNavigation,
+} from 'react-router'
 import {
 	LayoutDashboard,
-	BookOpen,
 	GraduationCap,
 	Settings,
-	Bell,
-	Search,
 	Zap,
 	Sun,
 	Moon,
 	SquarePen,
 	MessageCircle,
 	Map,
-	ShieldCheck,
 	Users,
 	BookMarked,
-	ChevronDown,
-	ChevronRight,
 } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useEffect, useState } from 'react'
-import PricingModal from '~/components/PricingModal'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import type { User } from '~/.server/database/types'
-import AiTutor from '~/components/AiTutor'
 
-const baseNavItems = [
+const PricingModal = lazy(() => import('~/components/PricingModal'))
+const AiTutor = lazy(() => import('~/components/AiTutor'))
+
+const learnerNavItems = [
 	{ label: 'Dashboard', href: '/', icon: LayoutDashboard },
-	{ label: 'My Courses', href: '/courses', icon: BookOpen },
 	{ label: 'Learning Paths', href: '/paths', icon: Map },
 	{ label: 'Achievements', href: '/achievements', icon: GraduationCap },
 	{ label: 'Settings', href: '/settings', icon: Settings },
 ]
 
-const adminSubItems = [
+const staffNavItems = [
 	{ label: 'Summary', href: '/admin', icon: LayoutDashboard },
 	{ label: 'Course Builder', href: '/course-builder', icon: SquarePen },
 	{ label: 'Users', href: '/admin/users', icon: Users },
 	{ label: 'Categories', href: '/admin/categories', icon: BookMarked },
 	{ label: 'Paths', href: '/admin/paths', icon: Map },
+	{ label: 'Settings', href: '/settings', icon: Settings },
 ]
 
 export default function MainLayout() {
 	const location = useLocation()
 	const matches = useMatches()
+	const navigation = useNavigation()
+	const [activeLink, setActiveLink] = useState(location.pathname)
 	const [isPricingOpen, setIsPricingOpen] = useState(false)
 	const [aiOpen, setAiOpen] = useState(false)
 	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-	const [adminOpen, setAdminOpen] = useState(() => {
-		const path = location.pathname
-		return path.startsWith('/admin') || path.startsWith('/course-builder')
-	})
 	const [theme, setTheme] = useState<'light' | 'dark'>(() => {
 		if (typeof document !== 'undefined') {
 			const el = document.documentElement
@@ -70,11 +69,13 @@ export default function MainLayout() {
 			return null
 		})
 		.find((user) => user !== null)
-	const navItems = currentUser?.role === 'staff' ? baseNavItems : baseNavItems
+	const navItems = currentUser?.role === 'staff' ? staffNavItems : learnerNavItems
 
-	const isAdminActive =
-		location.pathname.startsWith('/admin') ||
-		location.pathname.startsWith('/course-builder')
+	useEffect(() => {
+		if (navigation.state === 'idle') {
+			setActiveLink(location.pathname)
+		}
+	}, [location.pathname, navigation.state])
 
 	useEffect(() => {
 		const storedTheme = window.localStorage.getItem('theme')
@@ -115,7 +116,9 @@ export default function MainLayout() {
 							</div>
 							{!isSidebarCollapsed && (
 								<span className="min-w-0 text-xl font-bold tracking-tight text-white leading-tight break-words">
-									CyberSpace Academy
+									CyberSpace
+									<br />
+									Academy
 								</span>
 							)}
 						</Link>
@@ -124,11 +127,12 @@ export default function MainLayout() {
 
 				<nav className="flex-1">
 					{navItems.map((item) => {
-						const isActive = location.pathname === item.href
+						const isActive = activeLink === item.href
 						return (
 							<Link
 								key={item.href}
 								to={item.href}
+								onClick={() => setActiveLink(item.href)}
 								className={
 									`flex items-center px-6 py-3 text-sm font-medium transition-colors relative ${
 										isSidebarCollapsed
@@ -149,72 +153,6 @@ export default function MainLayout() {
 						)
 					})}
 
-					{/* Admin dropdown for staff */}
-					{currentUser?.role === 'staff' ? (
-						<>
-							{isSidebarCollapsed ? (
-								<Link
-									to="/admin"
-									className={`flex items-center justify-center px-6 py-3 text-sm font-medium transition-colors relative ${
-										isAdminActive
-											? 'bg-emerald-500/10 text-emerald-400 border-r-2 border-emerald-500'
-											: 'text-slate-400 hover:bg-slate-800 hover:text-white'
-									}`}
-									title="Admin Panel"
-								>
-									<ShieldCheck className="w-5 h-5" />
-								</Link>
-							) : (
-								<>
-									<button
-										onClick={() => setAdminOpen(!adminOpen)}
-										className={`flex items-center w-full gap-3 px-6 py-3 text-sm font-medium transition-colors relative ${
-											isAdminActive
-												? 'bg-emerald-500/10 text-emerald-400 border-r-2 border-emerald-500'
-												: 'text-slate-400 hover:bg-slate-800 hover:text-white'
-										}`}
-									>
-										<ShieldCheck className="w-5 h-5 shrink-0" />
-										<span className="flex-1 text-left">
-											Admin Panel
-										</span>
-										{adminOpen ? (
-											<ChevronDown className="w-4 h-4" />
-										) : (
-											<ChevronRight className="w-4 h-4" />
-										)}
-									</button>
-									{adminOpen && (
-										<div className="border-l border-slate-700 ml-6">
-											{adminSubItems.map((sub) => {
-												const isSubActive =
-													sub.href === '/admin'
-														? location.pathname ===
-															'/admin'
-														: location.pathname.startsWith(
-																sub.href,
-															)
-												return (
-													<Link
-														key={sub.href}
-														to={sub.href}
-														className={`flex items-center gap-3 pl-4 pr-6 py-2 text-xs font-medium transition-colors ${
-															isSubActive
-																? 'text-emerald-400'
-																: 'text-slate-400 hover:text-white'
-														}`}
-													>
-														<sub.icon className="w-4 h-4 shrink-0" />
-														{sub.label}
-													</Link>
-												)
-											})}
-										</div>
-									)}
-								</>
-							)}
-						</>
-					) : null}
 
 					{/* Pro Upgrade Card in Sidebar */}
 					{!isSidebarCollapsed && currentUser?.role !== 'staff' && (
@@ -243,49 +181,32 @@ export default function MainLayout() {
 						</div>
 					)}
 				</nav>
-
-				</aside>
+			</aside>
 
 			{/* Main Content */}
 			<main className="flex-1 flex flex-col min-w-0">
 				{/* Header */}
-				<header className="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 px-6 flex items-center justify-between">
-					<div className="flex-1 max-w-md relative">
-						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-						<input
-							type="text"
-							placeholder="Search courses, lessons..."
-							className="w-full pl-10 pr-4 py-2 bg-slate-800 border-transparent rounded-xl text-sm text-white focus:bg-slate-700 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none"
-						/>
-					</div>
-
-					<div className="ml-6 flex items-center gap-4">
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={toggleTheme}
-								className="p-2 text-slate-400 hover:bg-slate-800 rounded-full transition-colors"
-								aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-							>
-								{theme === 'dark' ? (
-									<Sun className="w-4 h-4" />
-								) : (
-									<Moon className="w-4 h-4" />
-								)}
-							</button>
-
-							<button className="p-2 text-slate-400 hover:bg-slate-800 rounded-full transition-colors relative">
-								<Bell className="w-5 h-5" />
-								<span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-slate-900"></span>
-							</button>
-						</div>
-					</div>
+				<header className="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 px-6 flex items-center justify-end">
+					<button
+						type="button"
+						onClick={toggleTheme}
+						className="p-2 text-slate-400 hover:bg-slate-800 rounded-full transition-colors"
+						aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+					>
+						{theme === 'dark' ? (
+							<Sun className="w-4 h-4" />
+						) : (
+							<Moon className="w-4 h-4" />
+						)}
+					</button>
 				</header>
 
-				<PricingModal
-					isOpen={isPricingOpen}
-					onClose={() => setIsPricingOpen(false)}
-				/>
+				<Suspense fallback={null}>
+					<PricingModal
+						isOpen={isPricingOpen}
+						onClose={() => setIsPricingOpen(false)}
+					/>
+				</Suspense>
 
 				{/* Page Content */}
 				<div className="p-6 md:p-10 max-w-7xl w-full mx-auto">
@@ -323,7 +244,9 @@ export default function MainLayout() {
 				<MessageCircle style={{ width: 16, height: 16 }} />
 				AI Tutor
 			</button>
-			<AiTutor isOpen={aiOpen} onClose={() => setAiOpen(false)} />
+			<Suspense fallback={null}>
+				<AiTutor isOpen={aiOpen} onClose={() => setAiOpen(false)} />
+			</Suspense>
 		</div>
 	)
 }
