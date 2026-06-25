@@ -81,13 +81,11 @@ export async function getCoursesWithLessonCount(): Promise<
 		SELECT 
 			c.id, c.title, c.description, c.instructor, c.thumbnail, c.length, 
 			cat.name AS category,
-			COUNT(l.id) AS lessons_count,
+			COUNT(l.id)::int AS lessons_count
 		FROM courses c
 		INNER JOIN categories cat ON c.category_id = cat.id
 		INNER JOIN modules m ON c.id = m.course_id
 		INNER JOIN lessons l ON m.id = l.module_id
-		INNER JOIN users_to_lessons utl ON l.id = utl.lesson_id
-		INNER JOIN users u on utl.user_id = u.id
 		GROUP BY c.id, cat.name
 		LIMIT 10
 	`)
@@ -114,15 +112,14 @@ export async function getCourseByUserWithProgress(
 		SELECT 
 			c.id, c.title, c.description, c.instructor, c.thumbnail, c.length, 
 			cat.name AS category,
-			COUNT(l.id) AS lessons_count,
-			COUNT(CASE WHEN utl.completed = true THEN 1 END) as progress
+			COUNT(l.id)::int AS lessons_count,
+			COUNT(CASE WHEN utl.completed = true THEN 1 END)::int as progress
 		FROM courses c
 		INNER JOIN categories cat ON c.category_id = cat.id
 		INNER JOIN modules m ON c.id = m.course_id
 		INNER JOIN lessons l ON m.id = l.module_id
-		INNER JOIN users_to_lessons utl ON l.id = utl.lesson_id
-		INNER JOIN users u on utl.user_id = u.id
-		WHERE u.id = ${userId}
+		INNER JOIN users_to_courses utc ON utc.course_id = c.id AND utc.user_id = ${userId}
+		LEFT JOIN users_to_lessons utl ON utl.lesson_id = l.id AND utl.user_id = ${userId}
 		GROUP BY c.id, cat.name
 	`)
 

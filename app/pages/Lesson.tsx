@@ -1,13 +1,13 @@
 import { Await, Link, redirect, useLoaderData } from 'react-router'
 import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
-import { Suspense } from 'react'
+import { Suspense, lazy } from 'react'
 import { userContext } from '~/context'
 import type { Route } from './+types/Lesson'
 import { NoUserContextError } from '~/error'
 import { getLessonPageData } from '~/.server/queries/lesson'
 import type { LessonPageData } from '~/.server/queries/lesson'
 import { formatLessonLength } from '~/utils/format-course-length'
-import MarkdownContent from '~/components/MarkdownContent'
+const MarkdownContent = lazy(() => import('~/components/MarkdownContent'))
 import ChallengeSection from '~/components/ChallengeSection'
 import {
 	getChallengeData,
@@ -193,7 +193,13 @@ function LessonContent({
 					</div>
 				</div>
 
-				<MarkdownContent content={currentLesson.contentMd} />
+				<Suspense
+					fallback={
+						<div className="h-96 bg-slate-800 rounded-xl animate-pulse" />
+					}
+				>
+					<MarkdownContent content={currentLesson.contentMd} />
+				</Suspense>
 
 				<Suspense
 					fallback={

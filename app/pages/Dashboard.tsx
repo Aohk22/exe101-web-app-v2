@@ -13,60 +13,55 @@ import React from 'react'
 import StatCard from '~/components/StatCard'
 import ContinueLearningFallback from '~/components/fallbacks/ContinueLearningFallback'
 import RecommendedCourseFallback from '~/components/fallbacks/RecommendedCourseFallback'
-import { getSession } from '~/.server/auth/sessions'
-// import { delay } from 'utils'
 
 export const handle = {}
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-	const session = await getSession(request.headers.get('Cookie'))
-	if (!session.has('userId')) redirect('/login')
-
+export async function loader({ context }: Route.LoaderArgs) {
 	const user = context.get(userContext)
 	if (user === null)
 		throw new NoUserContextError('User context resolved to null.')
 
-	// let courses = delay(2000).then(() => getDashboardData(user.id))
-	const userId = parseInt(session.get('userId')!)
-	if (Number.isNaN(userId)) throw new Error(`Invalid user id ${userId}`)
-
-	let courses = getDashboardData(userId)
-
-	return { courses }
+	return { courses: getDashboardData(user.id) }
 }
 
 export default function Dashboard({ loaderData }: Route.ComponentProps) {
 	let { courses } = loaderData
+
+	const stats = courses.then((cs) => {
+		let inProgress = 0
+		let completed = 0
+		let totalHours = 0
+		for (const c of cs) {
+			if (c.completed) {
+				completed++
+				totalHours += c.length
+			} else {
+				inProgress++
+			}
+		}
+		return { inProgress, completed, totalHours }
+	})
 
 	return (
 		<div className="space-y-8">
 			<section className="grid grid-cols-3 gap-3">
 				<StatCard
 					label="Courses in Progress"
-					value={courses.then(
-						(cs) => cs.filter((c) => c.completed === false).length,
-					)}
+					value={stats.then((s) => s.inProgress)}
 					icon={BookOpen}
 					color="text-blue-400"
 				/>
 
 				<StatCard
 					label="Completed Courses"
-					value={courses.then(
-						(cs) => cs.filter((c) => c.completed === true).length,
-					)}
+					value={stats.then((s) => s.completed)}
 					icon={GraduationCap}
 					color="text-emerald-400"
 				/>
 
 				<StatCard
 					label="Total learning hours"
-					value={courses.then((cs) =>
-						cs.reduce(
-							(acc, c) => (c.completed ? acc + c.length : acc),
-							0,
-						),
-					)}
+					value={stats.then((s) => s.totalHours)}
 					icon={Clock}
 					color="text-amber-400"
 				/>

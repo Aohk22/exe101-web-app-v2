@@ -266,8 +266,7 @@ async function getCourseCurriculum(
 				length: row.lessonLength,
 				contentMd: row.lessonContentMd,
 				moduleId: row.lessonModuleId,
-				challengeQuestions:
-					questionsByLesson.get(row.lessonId) ?? [],
+				challengeQuestions: questionsByLesson.get(row.lessonId) ?? [],
 			} as any)
 		}
 	}
@@ -398,9 +397,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 		let parsedJson: unknown
 		try {
 			parsedJson =
-				typeof importJson === 'string'
-					? JSON.parse(importJson)
-					: null
+				typeof importJson === 'string' ? JSON.parse(importJson) : null
 		} catch {
 			return data<ActionResult>(
 				{ error: 'Invalid JSON payload.' },
@@ -433,10 +430,9 @@ export async function action({ request, context }: Route.ActionArgs) {
 			if (categoryId == null) {
 				return data<ActionResult>(
 					{
-						error:
-							importData.categoryName
-								? `Category "${importData.categoryName}" not found.`
-								: 'categoryId or categoryName is required in the import file.',
+						error: importData.categoryName
+							? `Category "${importData.categoryName}" not found.`
+							: 'categoryId or categoryName is required in the import file.',
 					},
 					{ status: 400 },
 				)
@@ -510,26 +506,38 @@ export async function action({ request, context }: Route.ActionArgs) {
 		if (lessonIds.length > 0) {
 			await db.delete(challengeSubmissions).where(
 				sql`question_id IN (
-					SELECT id FROM challenge_questions WHERE lesson_id IN (${sql.join(lessonIds.map((id) => sql`${id}`), sql`, `)})
+					SELECT id FROM challenge_questions WHERE lesson_id IN (${sql.join(
+						lessonIds.map((id) => sql`${id}`),
+						sql`, `,
+					)})
 				)`,
 			)
 			await db.delete(challengeOptions).where(
 				sql`question_id IN (
-					SELECT id FROM challenge_questions WHERE lesson_id IN (${sql.join(lessonIds.map((id) => sql`${id}`), sql`, `)})
+					SELECT id FROM challenge_questions WHERE lesson_id IN (${sql.join(
+						lessonIds.map((id) => sql`${id}`),
+						sql`, `,
+					)})
 				)`,
 			)
 			await db.delete(challengeQuestions).where(
-				sql`lesson_id IN (${sql.join(lessonIds.map((id) => sql`${id}`), sql`, `)})`,
+				sql`lesson_id IN (${sql.join(
+					lessonIds.map((id) => sql`${id}`),
+					sql`, `,
+				)})`,
 			)
 			await db.delete(usersToLessons).where(
-				sql`lesson_id IN (${sql.join(lessonIds.map((id) => sql`${id}`), sql`, `)})`,
+				sql`lesson_id IN (${sql.join(
+					lessonIds.map((id) => sql`${id}`),
+					sql`, `,
+				)})`,
 			)
 		}
 
 		await db.delete(pathCourses).where(eq(pathCourses.courseId, courseId))
-		await db.delete(usersToCourses).where(
-			eq(usersToCourses.courseId, courseId),
-		)
+		await db
+			.delete(usersToCourses)
+			.where(eq(usersToCourses.courseId, courseId))
 		await db.delete(reviews).where(sql`course_id = ${courseId}`)
 		await db
 			.delete(lessons)

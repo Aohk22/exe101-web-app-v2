@@ -1,11 +1,21 @@
 import { sql } from 'drizzle-orm'
-import { CheckCircle2, Loader2, Plus, Trash2 } from 'lucide-react'
+import {
+	Check,
+	CheckCircle2,
+	Loader2,
+	Pencil,
+	Plus,
+	Trash2,
+	X,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 import {
 	data,
 	Form,
 	Link,
 	redirect,
 	useActionData,
+	useFetcher,
 	useLoaderData,
 	useNavigation,
 } from 'react-router'
@@ -26,6 +36,7 @@ const pathRowSchema = z.object({
 	id: z.coerce.number(),
 	title: z.string(),
 	description: z.string().nullable(),
+	thumbnail: z.string().nullable(),
 	coursesCount: z.coerce.number(),
 	totalDuration: z.coerce.number(),
 })
@@ -44,6 +55,7 @@ export async function loader({ context }: Route.LoaderArgs) {
 			p.id,
 			p.title,
 			p.description,
+			p.thumbnail,
 			COUNT(pc.id)::int AS "coursesCount",
 			COALESCE(SUM(c.length), 0)::int AS "totalDuration"
 		FROM learning_paths p
@@ -81,6 +93,20 @@ export async function action({ request, context }: Route.ActionArgs) {
 		return data({ success: true, error: null })
 	}
 
+	if (intent === 'update') {
+		const id = Number(form.get('id'))
+		const title = (form.get('title') as string)?.trim()
+		if (!title) {
+			return data({ error: 'Title is required.' }, { status: 400 })
+		}
+		const description = (form.get('description') as string)?.trim() || null
+		const thumbnail = (form.get('thumbnail') as string)?.trim() || null
+		await db.execute(
+			sql`UPDATE learning_paths SET title = ${title}, description = ${description}, thumbnail = ${thumbnail} WHERE id = ${id}`,
+		)
+		return data({ success: true, error: null })
+	}
+
 	if (intent === 'delete') {
 		const id = Number(form.get('id'))
 		await db.execute(sql`DELETE FROM learning_paths WHERE id = ${id}`)
@@ -105,6 +131,20 @@ export default function AdminPaths() {
 		| undefined
 	const navigation = useNavigation()
 	const isSubmitting = navigation.state === 'submitting'
+
+	const [editingId, setEditingId] = useState<number | null>(null)
+	const editFetcher = useFetcher<typeof action>()
+	const editData = editFetcher.data as
+		| { error: string; success?: undefined }
+		| { success: true; error: null }
+		| undefined
+	const editSubmitting = editFetcher.state === 'submitting'
+
+	useEffect(() => {
+		if (editData?.success) {
+			setEditingId(null)
+		}
+	}, [editData])
 
 	return (
 		<div className="space-y-4">
@@ -196,57 +236,158 @@ export default function AdminPaths() {
 						</tr>
 					</thead>
 					<tbody className="divide-y divide-slate-800">
-						{paths.map((path) => (
-							<tr key={path.id}>
-								<td className="px-3 py-2">
-									<Link
-										to={`/admin/paths/${path.id}`}
-										className="font-medium text-white hover:text-emerald-400 transition-colors"
-									>
-										{path.title}
-									</Link>
-								</td>
-								<td className="px-3 py-2 text-slate-500">
-									{path.coursesCount}
-								</td>
-								<td className="px-3 py-2 text-slate-500">
-									{formatDuration(path.totalDuration)}
-								</td>
-								<td className="px-3 py-2">
-									<div className="flex items-center justify-end gap-1">
-										<Form
+						{paths.map((path) =>
+							editingId === path.id ? (
+								<tr key={path.id}>
+									<td colSpan={4} className="px-3 py-2">
+										<editFetcher.Form
 											method="POST"
-											onSubmit={(e) => {
-												if (
-													!window.confirm(
-														`Delete path "${path.title}"?`,
-													)
-												) {
-													e.preventDefault()
-												}
-											}}
+											className="flex flex-wrap items-end gap-3"
 										>
 											<input
 												type="hidden"
 												name="intent"
-												value="delete"
+												value="update"
 											/>
 											<input
 												type="hidden"
 												name="id"
 												value={path.id}
 											/>
+											<div className="space-y-1">
+												<label className="text-[10px] font-semibold text-slate-400">
+													Title
+												</label>
+												<input
+													name="title"
+													defaultValue={path.title}
+													required
+													className="w-44 rounded-lg border border-slate-700 bg-slate-800 py-1.5 px-2 text-xs text-white placeholder-slate-500 outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+												/>
+											</div>
+											<div className="space-y-1">
+												<label className="text-[10px] font-semibold text-slate-400">
+													Description
+												</label>
+												<input
+													name="description"
+													defaultValue={
+														path.description ?? ''
+													}
+													className="w-44 rounded-lg border border-slate-700 bg-slate-800 py-1.5 px-2 text-xs text-white placeholder-slate-500 outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+												/>
+											</div>
+											<div className="space-y-1">
+												<label className="text-[10px] font-semibold text-slate-400">
+													Thumbnail URL
+												</label>
+												<input
+													name="thumbnail"
+													defaultValue={
+														path.thumbnail ?? ''
+													}
+													className="w-44 rounded-lg border border-slate-700 bg-slate-800 py-1.5 px-2 text-xs text-white placeholder-slate-500 outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+												/>
+											</div>
+											<div className="flex items-center gap-1 pb-1">
+												<button
+													type="submit"
+													disabled={editSubmitting}
+													className="rounded-lg p-1.5 text-emerald-400 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
+													title="Save"
+												>
+													{editSubmitting ? (
+														<Loader2 className="h-3.5 w-3.5 animate-spin" />
+													) : (
+														<Check className="h-3.5 w-3.5" />
+													)}
+												</button>
+												<button
+													type="button"
+													onClick={() =>
+														setEditingId(null)
+													}
+													className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-600/20 hover:text-slate-300"
+													title="Cancel"
+												>
+													<X className="h-3.5 w-3.5" />
+												</button>
+											</div>
+											{editData?.error ? (
+												<span className="w-full text-[10px] text-rose-400">
+													{editData.error}
+												</span>
+											) : null}
+										</editFetcher.Form>
+									</td>
+								</tr>
+							) : (
+								<tr key={path.id}>
+									<td className="px-3 py-2">
+										<Link
+											to={`/admin/paths/${path.id}`}
+											className="font-medium text-white hover:text-emerald-400 transition-colors"
+										>
+											{path.title}
+										</Link>
+										{path.description ? (
+											<p className="text-[10px] text-slate-500 mt-0.5 leading-tight">
+												{path.description}
+											</p>
+										) : null}
+									</td>
+									<td className="px-3 py-2 text-slate-500">
+										{path.coursesCount}
+									</td>
+									<td className="px-3 py-2 text-slate-500">
+										{formatDuration(path.totalDuration)}
+									</td>
+									<td className="px-3 py-2">
+										<div className="flex items-center justify-end gap-1">
 											<button
-												type="submit"
-												className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400"
+												type="button"
+												onClick={() =>
+													setEditingId(path.id)
+												}
+												className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-600/20 hover:text-slate-300"
+												title="Edit"
 											>
-												<Trash2 className="h-3.5 w-3.5" />
+												<Pencil className="h-3.5 w-3.5" />
 											</button>
-										</Form>
-									</div>
-								</td>
-							</tr>
-						))}
+											<Form
+												method="POST"
+												onSubmit={(e) => {
+													if (
+														!window.confirm(
+															`Delete path "${path.title}"?`,
+														)
+													) {
+														e.preventDefault()
+													}
+												}}
+											>
+												<input
+													type="hidden"
+													name="intent"
+													value="delete"
+												/>
+												<input
+													type="hidden"
+													name="id"
+													value={path.id}
+												/>
+												<button
+													type="submit"
+													className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400"
+												>
+													<Trash2 className="h-3.5 w-3.5" />
+												</button>
+											</Form>
+										</div>
+									</td>
+								</tr>
+							),
+						)}
 						{paths.length === 0 ? (
 							<tr>
 								<td

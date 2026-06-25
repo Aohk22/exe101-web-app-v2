@@ -121,13 +121,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 				SELECT
 					c.id AS "courseId",
 					c.title,
-					COUNT(utl.lesson_id)::int AS "totalLessons",
-					COUNT(CASE WHEN utl.completed = true THEN 1 END)::int AS "completedLessons",
-					CASE
-						WHEN COUNT(utl.lesson_id) = 0 THEN 0
+				COUNT(l.id)::int AS "totalLessons",
+				COUNT(CASE WHEN utl.completed = true THEN 1 END)::int AS "completedLessons",
+				CASE
+					WHEN COUNT(l.id) = 0 THEN 0
 						ELSE ROUND(
 							COUNT(CASE WHEN utl.completed = true THEN 1 END)::numeric
-							/ COUNT(utl.lesson_id)::numeric
+							/ COUNT(l.id)::numeric
 							* 100
 						)
 					END AS "completionRate"
@@ -135,7 +135,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 				JOIN users_to_courses utc ON utc.course_id = c.id AND utc.user_id = ${selectedUserId}
 				JOIN modules m ON m.course_id = c.id
 				JOIN lessons l ON l.module_id = m.id
-				JOIN users_to_lessons utl ON utl.lesson_id = l.id AND utl.user_id = utc.user_id
+				LEFT JOIN users_to_lessons utl ON utl.lesson_id = l.id AND utl.user_id = utc.user_id
 				GROUP BY c.id
 				ORDER BY c.title
 			`),
