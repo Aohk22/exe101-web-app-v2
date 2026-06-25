@@ -69,10 +69,10 @@ A new course is always created — the import does **not** update an existing co
 
 ## Related Files
 
-| File | Purpose |
-|------|---------|
-| `app/.server/queries/course-export.ts` | Fetches full course tree + challenge data for export |
-| `app/routes/CourseExport.ts` | Resource route handler for export |
-| `app/routes.ts:13` | Route manifest entry |
-| `app/components/course-builder/CourseBuilderWorkspace.tsx` | Import/Export UI buttons |
-| `app/pages/CourseBuilder.tsx` | Action handler for `intent=import-course` |
+| File                                                       | Purpose                                              |
+| ---------------------------------------------------------- | ---------------------------------------------------- |
+| `app/.server/queries/course-export.ts`                     | Fetches full course tree + challenge data for export |
+| `app/routes/CourseExport.ts`                               | Resource route handler for export                    |
+| `app/routes.ts:13`                                         | Route manifest entry                                 |
+| `app/components/course-builder/CourseBuilderWorkspace.tsx` | Import/Export UI buttons                             |
+| `app/pages/CourseBuilder.tsx`                              | Action handler for `intent=import-course`            |

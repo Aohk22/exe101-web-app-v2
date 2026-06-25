@@ -46,3 +46,11 @@ pnpm run db:wipe && pnpm run db:push && pnpm run db:seed
 - Seed passwords are pre-hashed bcrypt (`$2b$10$...`), not plaintext
 - `tsx` runner for scripts (`^4.21.0`)
 - AI tutor uses OpenRouter API (model `google/gemini-2.0-flash-lite-001`)
+
+## Git commits
+
+- Use [Conventional Commits](https://www.conventionalcommits.org/) format: `type: short description`
+- Types: `feat`, `fix`, `refactor`, `style`, `docs`, `chore`, `perf`, `test`
+- Imperative mood, no period at end of subject line
+- Subject ≤ 72 chars; blank line before body if needed
+- Body wraps at 72 chars, explains what and why (not how)

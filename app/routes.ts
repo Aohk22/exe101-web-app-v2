@@ -29,8 +29,6 @@ export default [
 					route('achievements', './pages/Achievements.tsx'),
 				]),
 
-				route('profile', './pages/Profile.tsx'),
-
 				route('settings', './pages/Settings.tsx'),
 
 				route('courses/:courseId', './pages/CourseDetail.tsx'),
