@@ -33,7 +33,6 @@ import {
 	usersToCourses,
 	reviews,
 } from '~/.server/database/schema'
-import type { Category, User } from '~/.server/database/types'
 import { getCategories } from '~/.server/database/utils'
 
 const challengeOptionDraftSchema = z.object({
@@ -202,10 +201,10 @@ async function getCourseCurriculum(
 	const questions =
 		lessonIds.length > 0
 			? await db
-					.select()
-					.from(challengeQuestions)
-					.where(inArray(challengeQuestions.lessonId, lessonIds))
-					.orderBy(asc(challengeQuestions.orderIndex))
+				.select()
+				.from(challengeQuestions)
+				.where(inArray(challengeQuestions.lessonId, lessonIds))
+				.orderBy(asc(challengeQuestions.orderIndex))
 			: []
 
 	const questionIds = questions.map((q) => q.id)
@@ -213,10 +212,10 @@ async function getCourseCurriculum(
 	const options =
 		questionIds.length > 0
 			? await db
-					.select()
-					.from(challengeOptions)
-					.where(inArray(challengeOptions.questionId, questionIds))
-					.orderBy(asc(challengeOptions.orderIndex))
+				.select()
+				.from(challengeOptions)
+				.where(inArray(challengeOptions.questionId, questionIds))
+				.orderBy(asc(challengeOptions.orderIndex))
 			: []
 
 	const optionsByQuestion = new Map<
@@ -317,8 +316,8 @@ async function loadBuilderData(
 		Number.isNaN(selectedCourseId) || selectedCourseId <= 0
 			? null
 			: (builderCourses.find(
-					(course) => course.id === selectedCourseId,
-				) ?? null)
+				(course) => course.id === selectedCourseId,
+			) ?? null)
 
 	const curriculum = selectedCourse
 		? await getCourseCurriculum(selectedCourse.id)
@@ -507,17 +506,17 @@ export async function action({ request, context }: Route.ActionArgs) {
 			await db.delete(challengeSubmissions).where(
 				sql`question_id IN (
 					SELECT id FROM challenge_questions WHERE lesson_id IN (${sql.join(
-						lessonIds.map((id) => sql`${id}`),
-						sql`, `,
-					)})
+					lessonIds.map((id) => sql`${id}`),
+					sql`, `,
+				)})
 				)`,
 			)
 			await db.delete(challengeOptions).where(
 				sql`question_id IN (
 					SELECT id FROM challenge_questions WHERE lesson_id IN (${sql.join(
-						lessonIds.map((id) => sql`${id}`),
-						sql`, `,
-					)})
+					lessonIds.map((id) => sql`${id}`),
+					sql`, `,
+				)})
 				)`,
 			)
 			await db.delete(challengeQuestions).where(
