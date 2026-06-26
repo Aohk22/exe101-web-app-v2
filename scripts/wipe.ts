@@ -1,37 +1,25 @@
+import { sql } from 'drizzle-orm'
 import { db } from '../app/.server/database/connection'
-import {
-	users,
-	categories,
-	courses,
-	modules,
-	lessons,
-	usersToCourses,
-	usersToLessons,
-	reviews,
-	challengeSubmissions,
-	challengeOptions,
-	challengeQuestions,
-	learningPaths,
-	pathCourses,
-} from '../app/.server/database/schema'
 
 async function wipe() {
 	console.log('🗑️  Wiping database...')
 
-	// Delete in dependency order (children before parents)
-	await db.delete(challengeSubmissions)
-	await db.delete(challengeOptions)
-	await db.delete(challengeQuestions)
-	await db.delete(pathCourses)
-	await db.delete(learningPaths)
-	await db.delete(usersToLessons)
-	await db.delete(usersToCourses)
-	await db.delete(reviews)
-	await db.delete(lessons)
-	await db.delete(modules)
-	await db.delete(courses)
-	await db.delete(users)
-	await db.delete(categories)
+	await db.execute(sql`
+		DROP TABLE IF EXISTS cyberspace.challenge_submissions      CASCADE;
+		DROP TABLE IF EXISTS cyberspace.challenge_options          CASCADE;
+		DROP TABLE IF EXISTS cyberspace.challenge_questions        CASCADE;
+		DROP TABLE IF EXISTS cyberspace.path_courses               CASCADE;
+		DROP TABLE IF EXISTS cyberspace.learning_paths             CASCADE;
+		DROP TABLE IF EXISTS cyberspace.password_reset_tokens      CASCADE;
+		DROP TABLE IF EXISTS cyberspace.users_to_lessons           CASCADE;
+		DROP TABLE IF EXISTS cyberspace.users_to_courses           CASCADE;
+		DROP TABLE IF EXISTS cyberspace.reviews                    CASCADE;
+		DROP TABLE IF EXISTS cyberspace.lessons                    CASCADE;
+		DROP TABLE IF EXISTS cyberspace.modules                    CASCADE;
+		DROP TABLE IF EXISTS cyberspace.courses                    CASCADE;
+		DROP TABLE IF EXISTS cyberspace.users                      CASCADE;
+		DROP TABLE IF EXISTS cyberspace.categories                 CASCADE;
+	`)
 
 	console.log('✅ Database wiped')
 }

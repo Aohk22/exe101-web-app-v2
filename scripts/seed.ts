@@ -368,6 +368,8 @@ async function seed() {
 	console.log('🌱 Seeding database...')
 
 	await db.execute(sql`
+		SET search_path TO cyberspace;
+
 		CREATE OR REPLACE FUNCTION fill_user_lessons()
 		RETURNS TRIGGER AS $$
 		BEGIN
@@ -382,7 +384,7 @@ async function seed() {
 		$$ LANGUAGE plpgsql;
 
 		CREATE OR REPLACE TRIGGER on_course_enrollment
-		AFTER INSERT ON users_to_courses
+		AFTER INSERT ON cyberspace.users_to_courses
 		FOR EACH ROW EXECUTE FUNCTION fill_user_lessons();
 	`)
 

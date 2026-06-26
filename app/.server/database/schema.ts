@@ -1,5 +1,4 @@
 import {
-	pgTable,
 	primaryKey,
 	integer,
 	varchar,
@@ -7,9 +6,12 @@ import {
 	boolean,
 	timestamp,
 	unique,
+	pgSchema,
 } from 'drizzle-orm/pg-core'
 
-export const users = pgTable('users', {
+export const cyberspaceSchema = pgSchema('cyberspace');
+
+export const users = cyberspaceSchema.table('users', {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	name: varchar({ length: 255 }).notNull(),
 	email: varchar({ length: 255 }).notNull().unique(),
@@ -18,7 +20,7 @@ export const users = pgTable('users', {
 
 })
 
-export const reviews = pgTable('reviews', {
+export const reviews = cyberspaceSchema.table('reviews', {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	userId: integer('user_id'),
 	courseId: integer('course_id'),
@@ -26,12 +28,12 @@ export const reviews = pgTable('reviews', {
 	rating: integer().notNull(),
 })
 
-export const categories = pgTable('categories', {
+export const categories = cyberspaceSchema.table('categories', {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	name: varchar({ length: 255 }).notNull().unique(),
 })
 
-export const courses = pgTable('courses', {
+export const courses = cyberspaceSchema.table('courses', {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	title: text().notNull(),
 	description: varchar({ length: 255 }).notNull(),
@@ -44,7 +46,7 @@ export const courses = pgTable('courses', {
 		.references(() => categories.id),
 })
 
-export const modules = pgTable('modules', {
+export const modules = cyberspaceSchema.table('modules', {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	title: varchar({ length: 255 }).notNull(),
 
@@ -53,7 +55,7 @@ export const modules = pgTable('modules', {
 		.references(() => courses.id),
 })
 
-export const lessons = pgTable('lessons', {
+export const lessons = cyberspaceSchema.table('lessons', {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	title: varchar({ length: 255 }).notNull(),
 	length: integer().notNull(),
@@ -64,7 +66,7 @@ export const lessons = pgTable('lessons', {
 		.references(() => modules.id),
 })
 
-export const usersToCourses = pgTable(
+export const usersToCourses = cyberspaceSchema.table(
 	'users_to_courses',
 	{
 		userId: integer('user_id')
@@ -77,7 +79,7 @@ export const usersToCourses = pgTable(
 	(t) => [primaryKey({ columns: [t.userId, t.courseId] })],
 )
 
-export const usersToLessons = pgTable(
+export const usersToLessons = cyberspaceSchema.table(
 	'users_to_lessons',
 	{
 		userId: integer('user_id')
@@ -91,7 +93,7 @@ export const usersToLessons = pgTable(
 	(t) => [primaryKey({ columns: [t.userId, t.lessonId] })],
 )
 
-export const challengeQuestions = pgTable('challenge_questions', {
+export const challengeQuestions = cyberspaceSchema.table('challenge_questions', {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	lessonId: integer('lesson_id')
 		.notNull()
@@ -102,7 +104,7 @@ export const challengeQuestions = pgTable('challenge_questions', {
 	orderIndex: integer('order_index').notNull().default(0),
 })
 
-export const challengeOptions = pgTable('challenge_options', {
+export const challengeOptions = cyberspaceSchema.table('challenge_options', {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	questionId: integer('question_id')
 		.notNull()
@@ -112,7 +114,7 @@ export const challengeOptions = pgTable('challenge_options', {
 	orderIndex: integer('order_index').notNull().default(0),
 })
 
-export const challengeSubmissions = pgTable(
+export const challengeSubmissions = cyberspaceSchema.table(
 	'challenge_submissions',
 	{
 		id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -129,7 +131,7 @@ export const challengeSubmissions = pgTable(
 	(t) => [unique().on(t.userId, t.questionId)],
 )
 
-export const learningPaths = pgTable('learning_paths', {
+export const learningPaths = cyberspaceSchema.table('learning_paths', {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	title: varchar({ length: 255 }).notNull(),
 	description: text(),
@@ -137,7 +139,7 @@ export const learningPaths = pgTable('learning_paths', {
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
-export const pathCourses = pgTable(
+export const pathCourses = cyberspaceSchema.table(
 	'path_courses',
 	{
 		id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -155,7 +157,7 @@ export const pathCourses = pgTable(
 	],
 )
 
-export const passwordResetTokens = pgTable('password_reset_tokens', {
+export const passwordResetTokens = cyberspaceSchema.table('password_reset_tokens', {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	userId: integer('user_id')
 		.notNull()
