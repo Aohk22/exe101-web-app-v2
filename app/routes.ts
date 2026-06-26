@@ -12,52 +12,54 @@ export default [
 	route('forgot-password', './pages/ForgotPassword.tsx'),
 	route('reset-password', './pages/ResetPassword.tsx'),
 
-	route('course-builder/:courseId/export', './routes/CourseExport.ts'),
-
 	layout('./routes/protected.tsx', [
 		layout('./layouts/MainLayout.tsx', [
+			index('./pages/IndexRedirect.tsx'),
 			layout('./layouts/SectionLayout.tsx', [
-				index('./pages/Dashboard.tsx'),
+
+
+				// User navigation
+				route('dashboard', './pages/Dashboard.tsx'),
 
 				route('courses', './pages/Courses.tsx'),
+				route('courses/:courseId', './pages/CourseDetail.tsx'),
+				route('courses/:courseId/lessons/:lessonId',
+					'./pages/Lesson.tsx',
+				),
 
 				route('paths', './pages/Paths.tsx'),
-
 				route('paths/:pathId', './pages/PathDetail.tsx'),
 
+
+				// Admin navigation (role-gated)
+				layout('./routes/admin-protected.tsx', [
+					route('admin', './pages/AdminDashboard.tsx'),
+
+					route('course-builder', './pages/CourseBuilder.tsx'),
+					route(
+						'course-builder/:courseId/lessons/:lessonId',
+						'./pages/CourseBuilderLesson.tsx',
+					),
+					route('course-builder/:courseId/export', './routes/CourseExport.ts'),
+
+					route('users', './pages/AdminUsers.tsx'),
+					route('users/new', './pages/AdminCreateUser.tsx'),
+					route('users/:userId/edit', './pages/AdminUserEdit.tsx'),
+
+					route('categories', './pages/AdminCategories.tsx'),
+
+					route('paths-admin', './pages/AdminPaths.tsx', [
+						route(':pathId', './pages/AdminPathDetail.tsx'),
+					]),
+				]),
+
+
+				// General
 				layout('./layouts/UnderConstructionLayout.tsx', [
 					route('achievements', './pages/Achievements.tsx'),
 				]),
 
 				route('settings', './pages/Settings.tsx'),
-
-				route('courses/:courseId', './pages/CourseDetail.tsx'),
-
-				route(
-					'courses/:courseId/lessons/:lessonId',
-					'./pages/Lesson.tsx',
-				),
-
-				route('admin', './pages/AdminDashboard.tsx'),
-
-				route('admin/users', './pages/AdminUsers.tsx'),
-
-				route('admin/users/new', './pages/AdminCreateUser.tsx'),
-
-				route('admin/users/:userId/edit', './pages/AdminUserEdit.tsx'),
-
-				route('admin/categories', './pages/AdminCategories.tsx'),
-
-				route('admin/paths', './pages/AdminPaths.tsx'),
-
-				route('admin/paths/:pathId', './pages/AdminPathDetail.tsx'),
-
-				route('course-builder', './pages/CourseBuilder.tsx'),
-
-				route(
-					'course-builder/:courseId/lessons/:lessonId',
-					'./pages/CourseBuilderLesson.tsx',
-				),
 			]),
 		]),
 	]),
