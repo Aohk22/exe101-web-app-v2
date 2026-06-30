@@ -4,6 +4,7 @@ import {
 	useLocation,
 	useMatches,
 	useNavigation,
+	useFetcher,
 } from 'react-router'
 import {
 	LayoutDashboard,
@@ -18,24 +19,29 @@ import {
 	Users,
 	BookMarked,
 	Book,
+	Swords,
+	Eye,
+	EyeOff,
 } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useEffect, useState, lazy, Suspense } from 'react'
-import type { User } from '~/.server/database/types'
+import { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react'
+import type { UserContext } from '~/context'
 
 const PricingModal = lazy(() => import('~/components/PricingModal'))
 const AiTutor = lazy(() => import('~/components/AiTutor'))
 
-const learnerNavItems = [
+type NavItem = { label: string; href: string; icon: React.ComponentType<{ className?: string }> }
+
+const userNavItems: NavItem[] = [
 	{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+	{ label: 'Challenges', href: '/challenges', icon: Swords },
 	{ label: 'Courses', href: '/courses', icon: Book },
-	{ label: 'Learning Paths', href: '/paths', icon: Map },
+	{ label: 'Learning Paths', href: '/learning-path', icon: Map },
 	{ label: 'Achievements', href: '/achievements', icon: GraduationCap },
-	{ label: 'Settings', href: '/settings', icon: Settings },
 ]
 
-const staffNavItems = [
-	{ label: 'Summary', href: '/admin', icon: LayoutDashboard },
+const staffNavItems: NavItem[] = [
+	{ label: 'Admin Panel', href: '/admin', icon: LayoutDashboard },
 	{ label: 'Course Builder', href: '/course-builder', icon: SquarePen },
 	{ label: 'Users', href: '/users', icon: Users },
 	{ label: 'Categories', href: '/categories', icon: BookMarked },
@@ -50,7 +56,40 @@ export default function MainLayout() {
 	const [activeLink, setActiveLink] = useState(location.pathname)
 	const [isPricingOpen, setIsPricingOpen] = useState(false)
 	const [aiOpen, setAiOpen] = useState(false)
-	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+	const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+		if (typeof window !== 'undefined') {
+			return window.localStorage.getItem('sidebarCollapsed') === 'true'
+		}
+		return false
+	})
+	const SNAP_THRESHOLD = 30
+	const sidebarRef = useRef<HTMLElement>(null)
+
+	const handleDragStart = useCallback((e: React.MouseEvent) => {
+		e.preventDefault()
+		const startX = e.clientX
+		const wasCollapsed = isSidebarCollapsed
+
+		const handleMouseMove = (ev: MouseEvent) => {
+			const dx = ev.clientX - startX
+			if (wasCollapsed && dx > SNAP_THRESHOLD) {
+				setIsSidebarCollapsed(false)
+				window.localStorage.setItem('sidebarCollapsed', 'false')
+				cleanup()
+			} else if (!wasCollapsed && dx < -SNAP_THRESHOLD) {
+				setIsSidebarCollapsed(true)
+				window.localStorage.setItem('sidebarCollapsed', 'true')
+				cleanup()
+			}
+		}
+		const cleanup = () => {
+			window.removeEventListener('mousemove', handleMouseMove)
+			window.removeEventListener('mouseup', handleMouseUp)
+		}
+		const handleMouseUp = cleanup
+		window.addEventListener('mousemove', handleMouseMove)
+		window.addEventListener('mouseup', handleMouseUp)
+	}, [isSidebarCollapsed])
 	const [theme, setTheme] = useState<'light' | 'dark'>(() => {
 		if (typeof document !== 'undefined') {
 			const el = document.documentElement
@@ -65,13 +104,14 @@ export default function MainLayout() {
 				typeof match.data === 'object' &&
 				'user' in match.data
 			) {
-				return match.data.user as User
+				return match.data.user as UserContext
 			}
 
 			return null
 		})
 		.find((user) => user !== null)
-	const navItems = currentUser?.role === 'staff' ? staffNavItems : learnerNavItems
+	const toggleFetcher = useFetcher()
+	const isLearnerView = currentUser?.isStaff && currentUser?.role === 'learner'
 
 	useEffect(() => {
 		if (navigation.state === 'idle') {
@@ -105,19 +145,17 @@ export default function MainLayout() {
 		<div className="flex min-h-screen bg-slate-950 text-slate-200 transition-colors">
 			{/* Sidebar */}
 			<aside
-				className={`border-r border-slate-800 bg-slate-900 hidden md:flex flex-col sticky top-0 h-screen relative shrink-0 ${isSidebarCollapsed ? 'w-[88px]' : 'w-fit'}`}
+				ref={sidebarRef}
+				className={`border-r border-slate-800 bg-slate-900 hidden md:flex flex-col sticky top-0 h-screen relative shrink-0 transition-[width] duration-200 ${isSidebarCollapsed ? 'w-[72px]' : 'w-60'}`}
 			>
 				<div className="p-6">
 					<div className="flex items-center justify-center">
 						<Link
 							to="/"
-							className={`flex items-center ${isSidebarCollapsed ? 'justify-center w-full' : 'gap-3 min-w-0'}`}
+							className="flex items-center justify-center"
 						>
-							<div className="h-8 w-8 shrink-0 bg-emerald-600 rounded-lg flex items-center justify-center">
-								<GraduationCap className="text-white w-5 h-5" />
-							</div>
 							{!isSidebarCollapsed && (
-								<span className="min-w-0 text-xl font-bold tracking-tight text-white leading-tight break-words">
+								<span className="text-xl font-bold tracking-tight text-white leading-tight text-center">
 									CyberSpace
 									<br />
 									Academy
@@ -128,35 +166,62 @@ export default function MainLayout() {
 				</div>
 
 				<nav className="flex-1">
-					{navItems.map((item) => {
-						const isActive = activeLink === item.href
-						return (
-							<Link
-								key={item.href}
-								to={item.href}
-								onClick={() => setActiveLink(item.href)}
-								className={
-									`flex items-center px-6 py-3 text-sm font-medium transition-colors relative ${isSidebarCollapsed
-										? 'justify-center'
-										: 'gap-3'
-									} ` +
-									(isActive
-										? 'bg-emerald-500/10 text-emerald-400 border-r-2 border-emerald-500'
-										: 'text-slate-400 hover:bg-slate-800 hover:text-white')
-								}
-								title={
-									isSidebarCollapsed ? item.label : undefined
-								}
-							>
-								<item.icon className="w-5 h-5" />
-								{!isSidebarCollapsed && item.label}
-							</Link>
-						)
-					})}
+					{userNavItems.map((item) => (
+						<Link
+							key={item.href}
+							to={item.href}
+							onClick={() => setActiveLink(item.href)}
+							className={
+								`flex items-center px-6 py-3 text-sm font-medium transition-colors relative ${isSidebarCollapsed
+									? 'justify-center'
+									: 'gap-3'
+								} ` +
+								(activeLink === item.href
+									? 'bg-emerald-500/10 text-emerald-400 border-r-2 border-emerald-500'
+									: 'text-slate-400 hover:bg-slate-800 hover:text-white')
+							}
+							title={
+								isSidebarCollapsed ? item.label : undefined
+							}
+						>
+							<item.icon className="w-5 h-5" />
+							{!isSidebarCollapsed && item.label}
+						</Link>
+					))}
+
+					{currentUser?.role === 'staff' && !isSidebarCollapsed && (
+						<div
+							title="Administration"
+							className="mx-6 my-2 h-px bg-slate-700 cursor-default"
+						/>
+					)}
+
+					{currentUser?.role === 'staff' && staffNavItems.map((item) => (
+						<Link
+							key={item.href}
+							to={item.href}
+							onClick={() => setActiveLink(item.href)}
+							className={
+								`flex items-center px-6 py-3 text-sm font-medium transition-colors relative ${isSidebarCollapsed
+									? 'justify-center'
+									: 'gap-3'
+								} ` +
+								(activeLink === item.href
+									? 'bg-emerald-500/10 text-emerald-400 border-r-2 border-emerald-500'
+									: 'text-slate-400 hover:bg-slate-800 hover:text-white')
+							}
+							title={
+								isSidebarCollapsed ? item.label : undefined
+							}
+						>
+							<item.icon className="w-5 h-5" />
+							{!isSidebarCollapsed && item.label}
+						</Link>
+					))}
 
 
 					{/* Pro Upgrade Card in Sidebar */}
-					{!isSidebarCollapsed && currentUser?.role !== 'staff' && (
+					{!isSidebarCollapsed && !currentUser?.isStaff && (
 						<div className="mt-8 px-2">
 							<div className="bg-emerald-600 rounded-xl p-4 text-white relative overflow-hidden group">
 								<div className="relative z-10">
@@ -182,12 +247,51 @@ export default function MainLayout() {
 						</div>
 					)}
 				</nav>
+
+				<div
+					onMouseDown={handleDragStart}
+					className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-emerald-500/50 active:bg-emerald-500/70 transition-colors z-10"
+				/>
 			</aside>
 
 			{/* Main Content */}
 			<main className="flex-1 flex flex-col min-w-0">
 				{/* Header */}
-				<header className="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 px-6 flex items-center justify-end">
+				<header className="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 px-6 flex items-center justify-end gap-2">
+					{currentUser?.isStaff && (
+						<toggleFetcher.Form method="POST" action="/toggle-view">
+							<button
+								type="submit"
+								className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer data-[loading=true]:opacity-50"
+								data-loading={toggleFetcher.state !== 'idle'}
+								style={{
+									borderColor: isLearnerView
+										? 'rgba(251, 191, 36, 0.4)'
+										: 'rgba(52, 211, 153, 0.4)',
+									color: isLearnerView
+										? '#fbbf24'
+										: '#34d399',
+								}}
+								onMouseEnter={(e) => {
+									e.currentTarget.style.borderColor = isLearnerView
+										? 'rgba(251, 191, 36, 0.8)'
+										: 'rgba(52, 211, 153, 0.8)'
+								}}
+								onMouseLeave={(e) => {
+									e.currentTarget.style.borderColor = isLearnerView
+										? 'rgba(251, 191, 36, 0.4)'
+										: 'rgba(52, 211, 153, 0.4)'
+								}}
+							>
+								{isLearnerView ? (
+									<EyeOff className="w-3.5 h-3.5" />
+								) : (
+									<Eye className="w-3.5 h-3.5" />
+								)}
+								{isLearnerView ? 'Staff View' : 'User View'}
+							</button>
+						</toggleFetcher.Form>
+					)}
 					<button
 						type="button"
 						onClick={toggleTheme}

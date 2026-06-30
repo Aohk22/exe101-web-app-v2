@@ -5,6 +5,7 @@ type SessionData = {
 	userId: string
 	userName: string
 	userRole: string
+	viewAsLearner: boolean
 }
 
 type SessionFlashData = {

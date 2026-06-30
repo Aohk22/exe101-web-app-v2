@@ -18,10 +18,15 @@ export const authMiddleware: Route.MiddlewareFunction = async ({
 	}
 
 	if (userName && userRole) {
+		const viewAsLearner = session.get('viewAsLearner')
+		const isStaff = userRole === 'staff'
+		const effectiveRole =
+			isStaff && viewAsLearner ? 'learner' : userRole
 		context.set(userContext, {
 			id: Number(userId),
 			name: userName,
-			role: userRole,
+			role: effectiveRole,
+			isStaff,
 		})
 	} else {
 		const user = await getUserById(userId)
@@ -36,6 +41,7 @@ export const authMiddleware: Route.MiddlewareFunction = async ({
 			id: user.id,
 			name: user.name,
 			role: user.role,
+			isStaff: user.role === 'staff',
 		})
 	}
 }
