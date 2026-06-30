@@ -55,7 +55,7 @@ The app is now running at `http://localhost:5173`.
 pnpm run db:wipe && pnpm run db:push && pnpm run db:seed
 ```
 
-## I'm a developer working on this project, where do I start?
+## Development
 
 ### Architecture overview
 
@@ -74,12 +74,9 @@ app/
 
 ### Key conventions
 
-- **Routes**: Declared in `app/routes.ts`, not by filesystem convention. Each route maps a URL path to a page component and optionally a route module with loader/action logic.
 - **Server-only code**: Anything in `app/.server/` must never be imported on the client. This includes database queries, auth logic, and session handling.
 - **Database queries**: Written as raw SQL using Drizzle's `sql` tagged template, parsed at runtime with **Zod** schemas. The Drizzle query builder is not used.
-- **Auth**: Cookie-based sessions (`__session` cookie, 1hr maxAge, httpOnly). Protected routes use `authMiddleware` applied via `app/routes/protected.tsx` layout.
 - **Styling**: Tailwind CSS v4 via `@tailwindcss/vite`. Formatting uses Prettier with tabs, single quotes, no semicolons, 4-space tab width.
-- **Lesson tracking**: When a user enrolls in a course, a PostgreSQL trigger (`on_course_enrollment`) auto-populates `users_to_lessons` rows for every lesson with `completed = false`.
 
 ### Available scripts
 
