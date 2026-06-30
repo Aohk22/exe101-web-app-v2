@@ -17,7 +17,7 @@ export const users = cyberspaceSchema.table('users', {
 	email: varchar({ length: 255 }).notNull().unique(),
 	password: text().notNull(),
 	role: varchar({ length: 20 }).notNull().default('learner'),
-
+	achievementPoints: integer('achievement_points').notNull().default(0),
 })
 
 export const reviews = cyberspaceSchema.table('reviews', {
@@ -136,6 +136,8 @@ export const learningPaths = cyberspaceSchema.table('learning_paths', {
 	title: varchar({ length: 255 }).notNull(),
 	description: text(),
 	thumbnail: text(),
+	tags: text('tags').array(),
+	timeToComplete: integer('time_to_complete'),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
@@ -155,6 +157,81 @@ export const pathCourses = cyberspaceSchema.table(
 		unique().on(t.pathId, t.courseId),
 		unique().on(t.pathId, t.position),
 	],
+)
+
+export const userPaths = cyberspaceSchema.table(
+	'user_paths',
+	{
+		userId: integer('user_id')
+			.notNull()
+			.references(() => users.id),
+		pathId: integer('path_id')
+			.notNull()
+			.references(() => learningPaths.id, { onDelete: 'cascade' }),
+		trackedAt: timestamp('tracked_at').defaultNow().notNull(),
+	},
+	(t) => [primaryKey({ columns: [t.userId, t.pathId] })],
+)
+
+export const pathChallenges = cyberspaceSchema.table(
+	'path_challenges',
+	{
+		id: integer().primaryKey().generatedAlwaysAsIdentity(),
+		pathId: integer('path_id')
+			.notNull()
+			.references(() => learningPaths.id, { onDelete: 'cascade' }),
+		challengeId: integer('challenge_id')
+			.notNull()
+			.references(() => challenges.id, { onDelete: 'cascade' }),
+		position: integer('position').notNull(),
+	},
+	(t) => [
+		unique().on(t.pathId, t.challengeId),
+		unique().on(t.pathId, t.position),
+	],
+)
+
+export const challenges = cyberspaceSchema.table('challenges', {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text().notNull(),
+	flag: text().notNull(),
+	difficulty: varchar({ length: 50 }).notNull(),
+	category: varchar({ length: 50 }).notNull(),
+	points: integer().notNull().default(0),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const tags = cyberspaceSchema.table('tags', {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	name: varchar({ length: 255 }).notNull().unique(),
+})
+
+export const challengeTags = cyberspaceSchema.table(
+	'challenge_tags',
+	{
+		challengeId: integer('challenge_id')
+			.notNull()
+			.references(() => challenges.id, { onDelete: 'cascade' }),
+		tagId: integer('tag_id')
+			.notNull()
+			.references(() => tags.id, { onDelete: 'cascade' }),
+	},
+	(t) => [primaryKey({ columns: [t.challengeId, t.tagId] })],
+)
+
+export const userChallenges = cyberspaceSchema.table(
+	'user_challenges',
+	{
+		userId: integer('user_id')
+			.notNull()
+			.references(() => users.id),
+		challengeId: integer('challenge_id')
+			.notNull()
+			.references(() => challenges.id, { onDelete: 'cascade' }),
+		completedAt: timestamp('completed_at').defaultNow().notNull(),
+	},
+	(t) => [primaryKey({ columns: [t.userId, t.challengeId] })],
 )
 
 export const passwordResetTokens = cyberspaceSchema.table('password_reset_tokens', {

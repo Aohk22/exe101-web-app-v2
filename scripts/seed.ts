@@ -12,6 +12,11 @@ import {
 	pathCourses,
 	challengeQuestions,
 	challengeOptions,
+	challenges,
+	tags,
+	challengeTags,
+	userChallenges,
+	pathChallenges,
 } from '../app/.server/database/schema'
 
 const CATEGORIES = [
@@ -349,12 +354,16 @@ const LEARNING_PATHS = [
 		description:
 			'Master the fundamentals of ethical hacking and network defense.',
 		thumbnail: 'https://picsum.photos/seed/security-foundations/600/400',
+		tags: ['ethical-hacking', 'network-defense', 'beginners'],
+		timeToComplete: 72000,
 	},
 	{
 		title: 'Cloud Practitioner',
 		description:
 			'Build a strong foundation in cloud security architecture.',
 		thumbnail: 'https://picsum.photos/seed/cloud-practitioner/600/400',
+		tags: ['cloud', 'aws', 'azure', 'security'],
+		timeToComplete: 43200,
 	},
 ]
 
@@ -362,6 +371,12 @@ const PATH_COURSES = [
 	{ pathIndex: 0, courseId: 1, position: 0 },
 	{ pathIndex: 0, courseId: 2, position: 1 },
 	{ pathIndex: 1, courseId: 3, position: 0 },
+]
+
+const PATH_CHALLENGES = [
+	{ pathIndex: 0, challengeIndex: 0, position: 0 },
+	{ pathIndex: 0, challengeIndex: 4, position: 1 },
+	{ pathIndex: 1, challengeIndex: 2, position: 0 },
 ]
 
 async function seed() {
@@ -565,6 +580,215 @@ async function seed() {
 	}
 
 	console.log('✅ Inserted challenge questions')
+
+	// Standalone challenges (CTF-style)
+	const CHALLENGES = [
+		{
+			name: 'SQL Injection Basics',
+			description:
+				'Find the flag by exploiting a SQL injection vulnerability in the login form. The database contains a secret table with the flag.',
+			flag: 'flag{un1on_s3l3ct_1s_p0w3rful}',
+			difficulty: 'easy',
+			category: 'web',
+			points: 100,
+			tagNames: ['sql-injection', 'web-exploitation'],
+		},
+		{
+			name: 'Packet Snoop',
+			description:
+				'A suspicious pcap file was captured on the network. Find the flag hidden in the network traffic.',
+			flag: 'flag{p4ck3t_4n4lys1s_1s_k3y}',
+			difficulty: 'easy',
+			category: 'network',
+			points: 100,
+			tagNames: ['pcap', 'traffic-analysis'],
+		},
+		{
+			name: 'Caesar\'s Secret',
+			description:
+				'We intercepted an encrypted message: "fdjlv{ohwv_ghfubsw_whd}". It looks like a classical cipher. Can you decode it?',
+			flag: 'flag{lets_decrypt_tea}',
+			difficulty: 'easy',
+			category: 'crypto',
+			points: 100,
+			tagNames: ['caesar-cipher', 'classical'],
+		},
+		{
+			name: 'Hidden in Plain Sight',
+			description:
+				'We found an image with some suspicious bytes at the end. Check the file and extract the secret message.',
+			flag: 'flag{st3g0_is_fun}',
+			difficulty: 'medium',
+			category: 'forensics',
+			points: 200,
+			tagNames: ['steganography', 'file-analysis'],
+		},
+		{
+			name: 'Buffer Overflow 101',
+			description:
+				'A simple program has a buffer overflow vulnerability. Overflow the buffer to call the `win` function and get the flag.',
+			flag: 'flag{0v3rfl0w_th3_buff3r}',
+			difficulty: 'medium',
+			category: 'binary',
+			points: 250,
+			tagNames: ['buffer-overflow', 'pwntools'],
+		},
+		{
+			name: 'Social Media Secrets',
+			description:
+				'Our target posted a photo on social media. Use OSINT techniques to find the flag hidden in their digital footprint.',
+			flag: 'flag{0s1nt_1s_publ1c_1nf0}',
+			difficulty: 'easy',
+			category: 'osint',
+			points: 100,
+			tagNames: ['social-media', 'digital-footprint'],
+		},
+		{
+			name: 'XSS Injection',
+			description:
+				'A comment form on the website is vulnerable to XSS. Bypass the sanitization to steal the admin cookie and get the flag.',
+			flag: 'flag{cr0ss_s1t3_scr1pt1ng}',
+			difficulty: 'medium',
+			category: 'web',
+			points: 200,
+			tagNames: ['xss', 'web-exploitation'],
+		},
+		{
+			name: 'ARP Poisoning',
+			description:
+				'An attacker on the local network is performing ARP spoofing. Analyze the traffic and find the intercepted flag.',
+			flag: 'flag{4rp_sp00f_4tt4ck}',
+			difficulty: 'medium',
+			category: 'network',
+			points: 200,
+			tagNames: ['arp', 'mitm'],
+		},
+		{
+			name: 'RSA Decryption',
+			description:
+				'We have an RSA encrypted message with n=77, e=7, ciphertext=15. Factor n and decrypt the message.',
+			flag: 'flag{rs4_1s_n0t_s3cur3}',
+			difficulty: 'hard',
+			category: 'crypto',
+			points: 350,
+			tagNames: ['rsa', 'asymmetric'],
+		},
+		{
+			name: 'Memory Dump Analysis',
+			description:
+				'A memory dump from a compromised machine was captured. Find the flag that was in the process memory.',
+			flag: 'flag{m3m0ry_f0r3ns1cs}',
+			difficulty: 'hard',
+			category: 'forensics',
+			points: 300,
+			tagNames: ['memory-analysis', 'volatility'],
+		},
+		{
+			name: 'Return-Oriented Programming',
+			description:
+				'ASLR and NX are enabled. Use ROP to bypass these protections and get a shell. The flag is in /root/flag.txt.',
+			flag: 'flag{r0p_ch41n_m4st3r}',
+			difficulty: 'insane',
+			category: 'binary',
+			points: 500,
+			tagNames: ['rop', 'aslr-bypass'],
+		},
+		{
+			name: 'GeoINT Challenge',
+			description:
+				'A photo was taken from a rooftop. Identify the city and landmark using visual clues to get the flag.',
+			flag: 'flag{g30_sp4t14l_1nt3l}',
+			difficulty: 'medium',
+			category: 'osint',
+			points: 200,
+			tagNames: ['geolocation', 'visual-osint'],
+		},
+	]
+
+	// Insert tags
+	const allTagNames = [...new Set(CHALLENGES.flatMap((c) => c.tagNames))]
+	const insertedTags = await db
+		.insert(tags)
+		.values(allTagNames.map((name) => ({ name })))
+		.onConflictDoNothing()
+		.returning()
+
+	console.log(`✅ Inserted ${insertedTags.length} tags`)
+
+	const tagMap = Object.fromEntries(
+		insertedTags.map((t) => [t.name, t.id]),
+	)
+
+	// Insert challenges
+	const insertedChallenges = await db
+		.insert(challenges)
+		.values(
+			CHALLENGES.map(({ tagNames: _, ...c }) => c),
+		)
+		.returning()
+
+	console.log(`✅ Inserted ${insertedChallenges.length} challenges`)
+
+	// Insert challenge-tag associations
+	const challengeTagValues = insertedChallenges.flatMap((ch, i) =>
+		CHALLENGES[i].tagNames
+			.filter((tn) => tagMap[tn])
+			.map((tn) => ({
+				challengeId: ch.id,
+				tagId: tagMap[tn],
+			})),
+	)
+
+	if (challengeTagValues.length > 0) {
+		await db.insert(challengeTags).values(challengeTagValues)
+	}
+
+	console.log('✅ Inserted challenge-tag associations')
+
+	await db.insert(pathChallenges).values(
+		PATH_CHALLENGES.map((pch) => ({
+			pathId: insertedPaths[pch.pathIndex].id,
+			challengeId: insertedChallenges[pch.challengeIndex].id,
+			position: pch.position,
+		})),
+	)
+
+	console.log('✅ Inserted path-challenge associations')
+
+	// Seed some user_challenges for solve counts
+	const CHALLENGE_SOLVES = [
+		{ userIndex: 0, challengeIndex: 0 }, // alice solved "SQL Injection Basics"
+		{ userIndex: 0, challengeIndex: 2 }, // alice solved "Caesar's Secret"
+		{ userIndex: 0, challengeIndex: 5 }, // alice solved "Social Media Secrets"
+		{ userIndex: 1, challengeIndex: 0 }, // bob solved "SQL Injection Basics"
+		{ userIndex: 2, challengeIndex: 0 }, // carol solved "SQL Injection Basics"
+		{ userIndex: 2, challengeIndex: 2 }, // carol solved "Caesar's Secret"
+	]
+
+	for (const solve of CHALLENGE_SOLVES) {
+		await db
+			.insert(userChallenges)
+			.values({
+				userId: userIdMap[solve.userIndex + 1],
+				challengeId: insertedChallenges[solve.challengeIndex].id,
+			})
+			.onConflictDoNothing()
+	}
+
+	console.log('✅ Inserted challenge solves')
+
+	// Award achievement points to users who solved challenges
+	await db.execute(sql`
+		UPDATE users u
+		SET achievement_points = (
+			SELECT COALESCE(SUM(c.points), 0)
+			FROM user_challenges uc
+			INNER JOIN challenges c ON c.id = uc.challenge_id
+			WHERE uc.user_id = u.id
+		)
+	`)
+
+	console.log('✅ Updated achievement points')
 
 	console.log('🎉 Seeding complete!')
 }

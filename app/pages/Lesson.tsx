@@ -1,4 +1,4 @@
-import { Await, Link, redirect, useLoaderData } from 'react-router'
+import { Await, Link, redirect, useFetcher, useLoaderData } from 'react-router'
 import { ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { Suspense, lazy } from 'react'
 import { userContext } from '~/context'
@@ -118,6 +118,7 @@ function LessonContent({
 	lessonData: LessonPageData
 	challengeQuestionsPromise: Promise<ChallengeQuestionWithOptions[]>
 }) {
+	const fetcher = useFetcher()
 	const {
 		course,
 		currentLesson,
@@ -216,9 +217,16 @@ function LessonContent({
 									questions={challengeQuestions}
 									lessonId={currentLesson.id}
 								/>
+							) : currentLesson.completed ? (
+								<div className="mt-10 border-t border-slate-800 pt-8">
+									<span className="inline-flex items-center gap-2 rounded-xl bg-emerald-600/20 px-5 py-3 text-sm font-medium text-emerald-400">
+										<CheckCircle2 className="w-4 h-4" />
+										Completed
+									</span>
+								</div>
 							) : (
 								<div className="mt-10 border-t border-slate-800 pt-8">
-									<form method="post">
+									<fetcher.Form method="post">
 										<input
 											type="hidden"
 											name="intent"
@@ -226,12 +234,17 @@ function LessonContent({
 										/>
 										<button
 											type="submit"
-											className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
+											disabled={
+												fetcher.state !== 'idle'
+											}
+											className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 										>
 											<CheckCircle2 className="w-4 h-4" />
-											Mark as Complete
+											{fetcher.state !== 'idle'
+												? 'Completing…'
+												: 'Mark as Complete'}
 										</button>
-									</form>
+									</fetcher.Form>
 								</div>
 							)
 						}}

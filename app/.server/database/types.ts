@@ -11,7 +11,13 @@ import {
 	challengeSubmissions,
 	learningPaths,
 	pathCourses,
+	userPaths,
+	pathChallenges,
 	passwordResetTokens,
+	challenges,
+	tags,
+	challengeTags,
+	userChallenges,
 } from './schema'
 import { z } from 'zod'
 
@@ -28,6 +34,12 @@ export type ChallengeQuestion = typeof challengeQuestions.$inferSelect
 export type ChallengeOption = typeof challengeOptions.$inferSelect
 export type ChallengeSubmission = typeof challengeSubmissions.$inferSelect
 export type LearningPath = typeof learningPaths.$inferSelect
+export type Challenge = typeof challenges.$inferSelect
+export type Tag = typeof tags.$inferSelect
+export type ChallengeTag = typeof challengeTags.$inferSelect
+export type UserChallenge = typeof userChallenges.$inferSelect
+export type UserPath = typeof userPaths.$inferSelect
+export type PathChallenge = typeof pathChallenges.$inferSelect
 
 export const userSchema = createSelectSchema(users)
 export const courseSchema = createSelectSchema(courses)
@@ -41,26 +53,85 @@ export const challengeSubmissionSchema =
 export const learningPathSchema = createSelectSchema(learningPaths)
 export const passwordResetTokenSchema = createSelectSchema(passwordResetTokens)
 export const pathCourseSchema = createSelectSchema(pathCourses)
+export const challengeSchema = createSelectSchema(challenges)
+export const tagSchema = createSelectSchema(tags)
+export const challengeTagSchema = createSelectSchema(challengeTags)
+export const userChallengeSchema = createSelectSchema(userChallenges)
+
+export const learningPathRoadmapItemSchema = z.object({
+	position: z.coerce.number(),
+	type: z.enum(['course', 'challenge']),
+	title: z.string(),
+	completed: z
+		.union([z.boolean(), z.string()])
+		.transform((v) => v === true || v === 'true'),
+	targetId: z.coerce.number(),
+})
+
+export type LearningPathRoadmapItem = z.infer<
+	typeof learningPathRoadmapItemSchema
+>
 
 export const learningPathWithCountSchema = learningPathSchema.extend({
 	coursesCount: z.coerce.number(),
 	totalDuration: z.coerce.number(),
+	tags: z.array(z.string()).nullable(),
+	timeToComplete: z.coerce.number().nullable(),
 	createdAt: z.coerce.date(),
+	tracked: z
+		.union([z.boolean(), z.string()])
+		.transform((v) => v === true || v === 'true'),
+	progress: z.coerce.number(),
+	roadmap: z.array(learningPathRoadmapItemSchema).default([]),
 })
 
 export type LearningPathWithCount = z.infer<typeof learningPathWithCountSchema>
 
-export type PathCourseEntry = {
-	position: number
-	courseId: number
-	title: string
-	description: string
-	thumbnail: string | null
-	length: number
-	lessonsCount: number
-	enrolled: boolean
-}
+export const pathCourseEntrySchema = z.object({
+	position: z.coerce.number(),
+	courseId: z.coerce.number(),
+	title: z.string(),
+	description: z.string(),
+	thumbnail: z.string().nullable(),
+	length: z.coerce.number(),
+	lessonsCount: z.coerce.number(),
+	completed: z
+		.union([z.boolean(), z.string()])
+		.transform((v) => v === true || v === 'true'),
+})
 
-export type LearningPathDetail = LearningPathWithCount & {
-	courses: PathCourseEntry[]
-}
+export type PathCourseEntry = z.infer<typeof pathCourseEntrySchema>
+
+export const roadmapItemSchema = z.discriminatedUnion('type', [
+	pathCourseEntrySchema.extend({ type: z.literal('course') }),
+	z.object({
+		type: z.literal('challenge'),
+		position: z.coerce.number(),
+		challengeId: z.coerce.number(),
+		name: z.string(),
+		description: z.string(),
+		difficulty: z.string(),
+		category: z.string(),
+		points: z.coerce.number(),
+		completed: z
+			.union([z.boolean(), z.string()])
+			.transform((v) => v === true || v === 'true'),
+	}),
+])
+
+export type RoadmapItem = z.infer<typeof roadmapItemSchema>
+
+export const learningPathDetailSchema = learningPathWithCountSchema.extend({
+	roadmap: z.array(roadmapItemSchema),
+})
+
+export type LearningPathDetail = z.infer<typeof learningPathDetailSchema>
+
+export const challengeViewSchema = challengeSchema.extend({
+	solveCount: z.coerce.number(),
+	completed: z.coerce.boolean(),
+	tags: z.array(z.string()),
+	createdAt: z.coerce.date(),
+})
+
+export type ChallengeView = z.infer<typeof challengeViewSchema>

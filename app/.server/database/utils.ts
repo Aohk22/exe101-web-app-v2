@@ -13,6 +13,7 @@ import {
 	userSchema,
 } from '~/.server/database/types'
 import { db } from '~/.server/database/connection'
+import { users } from '~/.server/database/schema'
 import { eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -31,22 +32,21 @@ export async function updateUser(
 	userId: number,
 	data: { name?: string; email?: string },
 ): Promise<User> {
-	const res = await db.execute(
-		sql`UPDATE users SET name = ${data.name}, email = ${data.email} WHERE id = ${userId} RETURNING *`,
-	)
-	return userSchema.parse(res.rows[0])
+	const [user] = await db
+		.update(users)
+		.set({ name: data.name, email: data.email })
+		.where(eq(users.id, userId))
+		.returning()
+	return user
 }
 
 export async function getUserById(userId: string): Promise<User | null> {
-	const res = await db.execute(
-		sql`SELECT u.* FROM users u WHERE u.id = ${userId} LIMIT 1`,
-	)
-	const user = z.safeParse(userSchema, res.rows[0])
-	if (user.success) {
-		return user.data
-	} else {
-		return null
-	}
+	const result = await db
+		.select()
+		.from(users)
+		.where(eq(users.id, Number(userId)))
+		.limit(1)
+	return result.at(0) ?? null
 }
 
 export async function getCategories(): Promise<Category[]> {
@@ -198,11 +198,12 @@ export async function updatePassword(
 }
 
 export async function getUserByEmail(email: string) {
-	const res = await db.execute(
-		sql`SELECT * FROM users WHERE email = ${email} LIMIT 1`,
-	)
-	const user = z.safeParse(userSchema, res.rows[0])
-	return user.success ? user.data : null
+	const result = await db
+		.select()
+		.from(users)
+		.where(eq(users.email, email))
+		.limit(1)
+	return result.at(0) ?? null
 }
 
 export async function getUserByIdOrEmail(userId: number | string) {
