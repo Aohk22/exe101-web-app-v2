@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 
 site_name: Cyberspace Web Docs
-site_url: https://aohk22.github.com/exe101-web-app-v2
-repo_url: https://github.com/aohk22/exe101-web-app-v2
+site_url: https://aohk22.github.com/cyberspace-academy
+repo_url: https://github.com/aohk22/cyberspace-academy
 edit_uri: edit/main/docs
 
 nav:
@@ -14,6 +14,8 @@ nav:
       - Wireframe: reference/wireframe.md
   - Feature Tracking:
       - Challenges: feature-tracking/challenges.md
+      - Admin Dashboard: feature-tracking/admin-dashboard.md
+      - Learning Paths: feature-tracking/admin-dashboard.md
 
 theme:
   name: material
