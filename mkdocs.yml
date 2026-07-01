@@ -11,7 +11,6 @@ nav:
   - Reference:
       - Database Schematic: reference/database-schematic.md
       - Sitemap: reference/sitemap.md
-      - Wireframe: reference/wireframe.md
   - Feature Tracking:
       - Challenges: feature-tracking/challenges.md
       - Admin Dashboard: feature-tracking/admin-dashboard.md
