@@ -14,7 +14,7 @@ nav:
   - Feature Tracking:
       - Challenges: feature-tracking/challenges.md
       - Admin Dashboard: feature-tracking/admin-dashboard.md
-      - Learning Paths: feature-tracking/admin-dashboard.md
+      - Learning Paths: feature-tracking/learning-path.md
 
 theme:
   name: material
